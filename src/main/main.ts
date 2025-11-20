@@ -5,6 +5,7 @@ import { promises as fs } from 'fs';
 import { spawn, exec } from 'child_process';
 import { promisify } from 'util';
 import Store from 'electron-store';
+import * as yaml from 'js-yaml';
 import type { Project, Settings } from '../shared/types.js';
 import { WBS_TEMPLATE } from '../shared/constants.js';
 
@@ -77,6 +78,74 @@ async function detectProjectType(projectPath: string): Promise<Project['type']> 
 }
 
 /**
+ * Parse wbs.yaml and extract project metadata
+ */
+async function parseWbsMetadata(projectPath: string, lastModified: number): Promise<Project['meta'] | undefined> {
+  try {
+    const wbsPath = path.join(projectPath, 'wbs.yaml');
+
+    // Check if wbs.yaml exists
+    try {
+      await fs.access(wbsPath);
+    } catch {
+      return undefined; // No wbs.yaml, return undefined
+    }
+
+    // Read and parse wbs.yaml
+    const wbsContent = await fs.readFile(wbsPath, 'utf-8');
+    const wbsData = yaml.load(wbsContent) as any;
+
+    if (!wbsData) {
+      return undefined;
+    }
+
+    // Extract tech stack - ensure it's always an array
+    let techStack: string[] = [];
+    const rawTechStack = wbsData.project_info?.tech_stack;
+
+    if (Array.isArray(rawTechStack)) {
+      techStack = rawTechStack.filter((item: any) => typeof item === 'string');
+    } else if (typeof rawTechStack === 'string') {
+      // Handle case where tech_stack is a comma-separated string
+      techStack = rawTechStack.split(',').map((s: string) => s.trim()).filter(Boolean);
+    } else if (typeof rawTechStack === 'object' && rawTechStack !== null) {
+      // Handle nested object structure like: { frontend: ["React"], backend: ["Node"] }
+      techStack = Object.values(rawTechStack)
+        .flat()
+        .filter((item: any) => typeof item === 'string');
+    }
+
+    // Extract current phase (first phase that is not "Done")
+    let currentPhase: string | undefined;
+    if (wbsData.phases && Array.isArray(wbsData.phases)) {
+      const activePhase = wbsData.phases.find((phase: any) =>
+        phase.status && phase.status.toLowerCase() !== 'done'
+      );
+
+      if (activePhase && activePhase.name) {
+        currentPhase = activePhase.name;
+      } else if (wbsData.phases.length > 0) {
+        // All phases are done
+        currentPhase = 'All Phases Complete';
+      }
+    }
+
+    // Calculate if project is a zombie (not modified in 30 days)
+    const thirtyDaysAgo = Date.now() - (30 * 24 * 60 * 60 * 1000);
+    const isZombie = lastModified < thirtyDaysAgo;
+
+    return {
+      techStack,
+      currentPhase,
+      isZombie,
+    };
+  } catch (error) {
+    console.error(`Error parsing WBS metadata for ${projectPath}:`, error);
+    return undefined; // Return undefined on error, don't crash
+  }
+}
+
+/**
  * Scan a directory for software projects
  */
 async function scanProjects(rootPath: string): Promise<Project[]> {
@@ -92,11 +161,16 @@ async function scanProjects(rootPath: string): Promise<Project[]> {
         // Only include directories that are identified as projects
         if (type !== 'unknown' || (await fs.readdir(projectPath)).includes('.git')) {
           const stats = await fs.stat(projectPath);
+
+          // Parse wbs.yaml metadata
+          const meta = await parseWbsMetadata(projectPath, stats.mtimeMs);
+
           projects.push({
             name: entry.name,
             path: projectPath,
             type,
             lastModified: stats.mtimeMs,
+            meta,
           });
         }
       }

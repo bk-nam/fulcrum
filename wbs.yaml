@@ -55,37 +55,57 @@ phases:
         status: "Done"
         priority: "P0"
         spec: "Project Detail Modal. Read/Write `wbs.yaml`. 'Copy Context for AI' feature. Debounced auto-save."
+      - id: "WBS-002"
+        title: "Interactive WBS GUI"
+        priority: "P0"
+        status: "Ready"
+        spec: |
+          Implement a Dual-Mode editor (Text/Visual).
+          Parse YAML to UI components (Phases as Accordions, Tasks as Cards).
+          Allow direct manipulation of Status, Priority, and Specs via UI.
+          Auto-sync UI changes back to YAML string.
 
   # --- Upcoming Phases (Based on Original Vision) ---
   - name: "Phase 4: Intelligence (Dashboard)"
     tasks:
       - id: "DASH-001"
         title: "Metadata Sync & UI Polish"
-        status: "Ready"
+        status: "Done" # ✅ 완료
         priority: "P1"
-        period: "2025-11-21"
-        spec: |
-          Parse `wbs.yaml` during scan.
-          Display Tech Stack badges and Current Phase on dashboard cards.
-          Visualize project health/status without opening details.
+        period: "2025-11-20"
+        spec: "Parsed `wbs.yaml` metadata. Displayed Tech Stack badges and Phase info."
 
-  - name: "Phase 5: Lifecycle Management (Zombie Projects)"
+  - name: "Phase 5: Lifecycle Management (Zombie Killer)"
     tasks:
       - id: "LIFE-001"
+        title: "Freshness Indicator (Last Touched)"
+        status: "Done"
+        priority: "P2"
+        period: "2025-11-20"
+        spec: "Implemented logic to visualize relative time and color-code project health (Fresh/Stale/Zombie)."
+      - id: "LIFE-002"
+        title: "Search & Filter System"
+        status: "Ready"
+        priority: "P1"
+        spec: |
+          Real-time search by project name.
+          Sort by: Name (A-Z), Freshness (Newest/Oldest).
+          Filter by: Status (Active/Zombie), Tech Stack.
+      - id: "LIFE-003"
         title: "Last Touched Heatmap"
         status: "Pending"
         priority: "P2"
         spec: |
           Calculate days since last file modification.
           Color code cards: Green (<3 days), Yellow (<2 weeks), Red (>1 month).
-      - id: "LIFE-002"
+      - id: "LIFE-004"
         title: "Status Tagging System"
         status: "Pending"
         priority: "P2"
         spec: |
           Manual tagging: Active, Maintenance, Archive, Idea.
           Filter/Sort dashboard by these tags.
-      - id: "LIFE-003"
+      - id: "LIFE-005"
         title: "Tech Stack Indexer"
         status: "Pending"
         priority: "P3"

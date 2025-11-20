@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, Rocket, Copy, CheckCircle } from 'lucide-react';
+import { X, Rocket, Copy, CheckCircle, Layout, Code } from 'lucide-react';
+import * as yaml from 'js-yaml';
 import type { Project } from '../../shared/types';
 import { AI_CONTEXT_PROMPT_TEMPLATE } from '../../shared/constants';
+import GuiEditor from './GuiEditor';
 
 interface ProjectDetailModalProps {
   project: Project | null;
@@ -22,6 +24,11 @@ const ProjectDetailModal: React.FC<ProjectDetailModalProps> = ({
   const [isSaving, setIsSaving] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [copySuccess, setCopySuccess] = useState(false);
+
+  // GUI Mode state
+  const [viewMode, setViewMode] = useState<'gui' | 'code'>('gui');
+  const [parsedWbs, setParsedWbs] = useState<any>(null);
+  const [parseError, setParseError] = useState<string | null>(null);
 
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const initialContentRef = useRef<string>('');
@@ -130,6 +137,43 @@ const ProjectDetailModal: React.FC<ProjectDetailModalProps> = ({
     }
   };
 
+  // Parse YAML to object for GUI mode
+  const parseYaml = (content: string): boolean => {
+    try {
+      const parsed = yaml.load(content);
+      setParsedWbs(parsed);
+      setParseError(null);
+      return true;
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Invalid YAML';
+      setParseError(errorMessage);
+      setViewMode('code'); // Force code mode on parse error
+      return false;
+    }
+  };
+
+  // Update from GUI mode
+  const handleGuiUpdate = (updatedData: any) => {
+    try {
+      setParsedWbs(updatedData);
+      const yamlString = yaml.dump(updatedData, {
+        indent: 2,
+        lineWidth: 120,
+        noRefs: true,
+      });
+      setWbsContent(yamlString); // Triggers auto-save
+    } catch (error) {
+      console.error('Error dumping YAML:', error);
+    }
+  };
+
+  // Parse YAML when switching to GUI mode or loading content
+  useEffect(() => {
+    if (viewMode === 'gui' && wbsContent && wbsExists) {
+      parseYaml(wbsContent);
+    }
+  }, [viewMode, wbsContent, wbsExists]);
+
   const formatLastSaved = (date: Date): string => {
     return date.toLocaleTimeString('en-US', {
       hour: '2-digit',
@@ -161,23 +205,53 @@ const ProjectDetailModal: React.FC<ProjectDetailModalProps> = ({
             </button>
 
             {wbsExists && (
-              <button
-                onClick={handleCopyContext}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors"
-                title="Copy context for AI"
-              >
-                {copySuccess ? (
-                  <>
-                    <CheckCircle className="w-4 h-4" />
-                    Copied!
-                  </>
-                ) : (
-                  <>
-                    <Copy className="w-4 h-4" />
-                    Copy Context
-                  </>
-                )}
-              </button>
+              <>
+                <button
+                  onClick={handleCopyContext}
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors"
+                  title="Copy context for AI"
+                >
+                  {copySuccess ? (
+                    <>
+                      <CheckCircle className="w-4 h-4" />
+                      Copied!
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="w-4 h-4" />
+                      Copy Context
+                    </>
+                  )}
+                </button>
+
+                {/* View Mode Toggle */}
+                <div className="flex items-center gap-1 bg-gray-100 p-1 rounded-lg">
+                  <button
+                    onClick={() => setViewMode('gui')}
+                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded transition-colors text-sm font-medium ${
+                      viewMode === 'gui'
+                        ? 'bg-white text-blue-600 shadow-sm'
+                        : 'text-gray-600 hover:text-gray-900'
+                    }`}
+                    title="Visual Editor"
+                  >
+                    <Layout className="w-4 h-4" />
+                    Visual
+                  </button>
+                  <button
+                    onClick={() => setViewMode('code')}
+                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded transition-colors text-sm font-medium ${
+                      viewMode === 'code'
+                        ? 'bg-white text-blue-600 shadow-sm'
+                        : 'text-gray-600 hover:text-gray-900'
+                    }`}
+                    title="Code Editor"
+                  >
+                    <Code className="w-4 h-4" />
+                    Code
+                  </button>
+                </div>
+              </>
             )}
 
             <button
@@ -224,18 +298,36 @@ const ProjectDetailModal: React.FC<ProjectDetailModalProps> = ({
                 </div>
               </div>
 
-              {/* Textarea Editor */}
-              <textarea
-                value={wbsContent}
-                onChange={(e) => setWbsContent(e.target.value)}
-                className="flex-1 w-full p-4 bg-[#1e1e1e] text-[#d4d4d4] font-mono text-sm resize-none rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Enter your WBS YAML content here..."
-                spellCheck={false}
-                style={{
-                  tabSize: 2,
-                  lineHeight: '1.6',
-                }}
-              />
+              {/* Parse Error Warning */}
+              {parseError && (
+                <div className="bg-red-50 border border-red-200 rounded-lg p-3 flex items-start gap-2">
+                  <span className="text-red-600 text-sm">⚠️</span>
+                  <div className="flex-1">
+                    <p className="text-sm text-red-800 font-medium">Invalid YAML</p>
+                    <p className="text-xs text-red-600 mt-1">{parseError}</p>
+                    <p className="text-xs text-red-600 mt-1">Please fix the syntax in Code mode.</p>
+                  </div>
+                </div>
+              )}
+
+              {/* Editor: GUI or Code */}
+              <div className="flex-1 overflow-hidden">
+                {viewMode === 'gui' && parsedWbs ? (
+                  <GuiEditor parsedWbs={parsedWbs} onUpdate={handleGuiUpdate} />
+                ) : (
+                  <textarea
+                    value={wbsContent}
+                    onChange={(e) => setWbsContent(e.target.value)}
+                    className="w-full h-full p-4 bg-[#1e1e1e] text-[#d4d4d4] font-mono text-sm resize-none rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="Enter your WBS YAML content here..."
+                    spellCheck={false}
+                    style={{
+                      tabSize: 2,
+                      lineHeight: '1.6',
+                    }}
+                  />
+                )}
+              </div>
             </div>
           )}
         </div>
