@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Package, FileCode, Box, Folder, Rocket, Milestone } from 'lucide-react';
+import { Rocket, Milestone, Folder } from 'lucide-react';
+import { SiNodedotjs, SiPython, SiRust } from 'react-icons/si';
 import type { Project } from '../../shared/types';
 import { getRelativeTime, getProjectHealth, getHealthColor } from '../../shared/utils';
 
@@ -22,13 +23,13 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onLaunch, onClick })
   const IconComponent = () => {
     switch (project.type) {
       case 'node':
-        return <Package className="w-8 h-8 text-green-600" />;
+        return <SiNodedotjs className="w-8 h-8 text-slate-600" />;
       case 'python':
-        return <FileCode className="w-8 h-8 text-blue-600" />;
+        return <SiPython className="w-8 h-8 text-slate-600" />;
       case 'rust':
-        return <Box className="w-8 h-8 text-orange-600" />;
+        return <SiRust className="w-8 h-8 text-slate-600" />;
       default:
-        return <Folder className="w-8 h-8 text-gray-600" />;
+        return <Folder className="w-8 h-8 text-slate-600" />;
     }
   };
 
@@ -73,24 +74,19 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onLaunch, onClick })
 
   return (
     <div
-      className={`bg-white rounded-lg shadow-md p-6 hover:shadow-neon hover:-translate-y-1 transition-all duration-300 border-2 border-gray-200 hover:border-transparent hover:bg-gradient-to-br hover:from-white hover:via-purple-50 hover:to-pink-50 relative group cursor-pointer min-h-[140px] flex flex-col ${
-        isZombie ? 'opacity-75 hover:opacity-100' : ''
+      className={`bg-white rounded-lg shadow-sm p-6 hover:shadow-md hover:-translate-y-1 transition-all duration-300 border border-slate-200 hover:border-slate-300 relative group cursor-pointer min-h-[140px] flex flex-col ${
+        isZombie ? 'opacity-60 hover:opacity-100' : ''
       }`}
-      style={{
-        backgroundImage: 'linear-gradient(white, white), linear-gradient(135deg, #8B5CF6, #EC4899)',
-        backgroundOrigin: 'border-box',
-        backgroundClip: 'padding-box, border-box',
-      }}
       onClick={() => onClick(project)}
     >
       {/* Launch Button */}
       <button
         onClick={handleLaunchClick}
         disabled={isLaunching}
-        className="absolute top-3 right-3 p-2 bg-gradient-primary text-white rounded-lg opacity-0 group-hover:opacity-100 transition-all duration-300 hover:scale-110 hover:shadow-glow-purple disabled:opacity-50"
+        className="absolute top-3 right-3 p-2 bg-indigo-600 text-white rounded-lg opacity-0 group-hover:opacity-100 transition-all duration-300 hover:scale-105 hover:bg-indigo-700 disabled:opacity-50"
         title="Launch project"
       >
-        <Rocket className={`w-4 h-4 ${isLaunching ? 'animate-bounce' : ''}`} />
+        <Rocket className={`w-4 h-4`} />
       </button>
 
       {/* Main Content */}
@@ -105,7 +101,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onLaunch, onClick })
             </h3>
             {/* Freshness Indicator */}
             <div className="flex flex-row-reverse items-center gap-1.5 flex-shrink-0">
-              <div className={`w-3 h-3 rounded-full ${healthColors.dot} ${health === 'fresh' ? 'animate-pulse shadow-glow-cyan' : ''}`} />
+              <div className={`w-3 h-3 rounded-full ${healthColors.dot}`} />
               <span className={`text-xs font-medium ${healthColors.text}`}>
                 {relativeTime}
               </span>
@@ -120,10 +116,10 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onLaunch, onClick })
 
       {/* Phase Indicator */}
       {project.meta?.currentPhase && (
-        <div className="mt-3 pt-3 border-t border-gradient-to-r border-transparent bg-gradient-to-r from-purple-100 via-transparent to-pink-100">
+        <div className="mt-3 pt-3 border-t border-slate-200">
           <div className="flex items-center gap-2 text-sm">
-            <Milestone className="w-4 h-4 text-brand-purple" />
-            <span className="truncate font-medium bg-gradient-primary bg-clip-text text-transparent">
+            <Milestone className="w-4 h-4 text-indigo-600" />
+            <span className="truncate font-medium text-slate-700">
               {project.meta.currentPhase}
             </span>
           </div>

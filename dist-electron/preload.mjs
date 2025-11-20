@@ -37,5 +37,19 @@ electron.contextBridge.exposeInMainWorld("electron", {
   },
   saveWbs: (projectPath, content) => {
     return electron.ipcRenderer.invoke("save-wbs", projectPath, content);
+  },
+  // Quick Notes operations
+  getQuickNotes: () => {
+    return electron.ipcRenderer.invoke("get-quick-notes");
+  },
+  saveQuickNote: (note) => {
+    return electron.ipcRenderer.invoke("save-quick-note", note);
+  },
+  deleteQuickNote: (noteId) => {
+    return electron.ipcRenderer.invoke("delete-quick-note", noteId);
+  },
+  // Env file operations
+  readEnv: (projectPath) => {
+    return electron.ipcRenderer.invoke("read-env", projectPath);
   }
 });

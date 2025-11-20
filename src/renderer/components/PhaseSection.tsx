@@ -22,12 +22,13 @@ interface PhaseSectionProps {
 }
 
 const PhaseSection: React.FC<PhaseSectionProps> = ({ phase, onUpdate }) => {
-  const [isCollapsed, setIsCollapsed] = useState(false);
-
   // Calculate task completion
   const totalTasks = phase.tasks?.length || 0;
   const completedTasks = phase.tasks?.filter((task) => task.status === 'Done').length || 0;
   const completionPercentage = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+
+  // Default to collapsed if 100% complete
+  const [isCollapsed, setIsCollapsed] = useState(completionPercentage === 100);
 
   // Handle task update
   const handleTaskUpdate = (taskIndex: number, updatedTask: Task) => {
@@ -37,20 +38,15 @@ const PhaseSection: React.FC<PhaseSectionProps> = ({ phase, onUpdate }) => {
   };
 
   return (
-    <div className="border-2 border-transparent rounded-xl overflow-hidden bg-white shadow-lg hover:shadow-neon transition-all duration-300"
-         style={{
-           backgroundImage: 'linear-gradient(white, white), linear-gradient(135deg, #06B6D4, #3B82F6)',
-           backgroundOrigin: 'border-box',
-           backgroundClip: 'padding-box, border-box',
-         }}>
+    <div className="border border-slate-200 rounded-xl overflow-hidden bg-white shadow-sm hover:shadow-md transition-all duration-300">
       {/* Phase Header */}
       <div
-        className="flex items-center justify-between p-4 bg-gradient-cool cursor-pointer hover:shadow-glow-cyan transition-all duration-300"
+        className="flex items-center justify-between p-4 bg-slate-700 cursor-pointer hover:bg-slate-600 transition-all duration-300"
         onClick={() => setIsCollapsed(!isCollapsed)}
       >
         <div className="flex items-center gap-3 flex-1">
           {/* Collapse/Expand Icon */}
-          <button className="text-white hover:scale-110 transition-transform">
+          <button className="p-1.5 rounded-lg border border-slate-500 bg-slate-600 text-white hover:bg-slate-500 hover:border-slate-400 transition-all duration-300">
             {isCollapsed ? (
               <ChevronRight className="w-5 h-5" />
             ) : (
@@ -59,22 +55,22 @@ const PhaseSection: React.FC<PhaseSectionProps> = ({ phase, onUpdate }) => {
           </button>
 
           {/* Phase Name */}
-          <h3 className="text-lg font-bold text-white drop-shadow-md">{phase.name}</h3>
+          <h3 className="text-lg font-semibold text-white">{phase.name}</h3>
         </div>
 
         {/* Completion Status */}
         <div className="flex items-center gap-3">
-          <span className="text-sm font-medium text-white/90">
+          <span className="text-sm font-medium text-slate-200">
             {completedTasks} / {totalTasks} tasks
           </span>
           <div className="flex items-center gap-2">
-            <div className="w-24 h-2.5 bg-white/30 rounded-full overflow-hidden backdrop-blur-sm">
+            <div className="w-24 h-2.5 bg-slate-500 rounded-full overflow-hidden">
               <div
-                className="h-full bg-gradient-success shadow-glow-cyan transition-all duration-500"
+                className="h-full bg-indigo-500 transition-all duration-500"
                 style={{ width: `${completionPercentage}%` }}
               />
             </div>
-            <span className="text-sm font-bold text-white drop-shadow-md">{completionPercentage}%</span>
+            <span className="text-sm font-semibold text-white">{completionPercentage}%</span>
           </div>
         </div>
       </div>
@@ -98,9 +94,9 @@ const PhaseSection: React.FC<PhaseSectionProps> = ({ phase, onUpdate }) => {
 
           {/* Add Task Button (Placeholder for future enhancement) */}
           <button
-            className="w-full py-3 border-2 border-dashed border-gray-300 rounded-lg text-gray-500 hover:border-blue-400 hover:text-blue-600 transition-colors text-sm font-medium"
-            disabled
-            title="Coming soon"
+            className="w-full py-3 border-2 border-dashed border-purple-300 bg-white rounded-lg text-brand-purple hover:border-brand-purple hover:bg-gradient-to-r hover:from-purple-50 hover:to-pink-50 hover:shadow-md transition-all duration-300 text-sm font-semibold cursor-pointer"
+            onClick={() => alert('Coming soon! This feature is under development.')}
+            title="Add a new task to this phase"
           >
             + Add Task
           </button>

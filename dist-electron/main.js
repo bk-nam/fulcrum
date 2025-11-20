@@ -18204,6 +18204,59 @@ async function launchProject(projectPath) {
     };
   }
 }
+async function parseEnvFile(projectPath, filename) {
+  try {
+    const envPath = path$1.join(projectPath, filename);
+    try {
+      await promises.access(envPath);
+    } catch {
+      return [];
+    }
+    const content = await promises.readFile(envPath, "utf-8");
+    const variables = [];
+    content.split("\n").forEach((line) => {
+      line = line.trim();
+      if (!line || line.startsWith("#")) return;
+      const equalIndex = line.indexOf("=");
+      if (equalIndex === -1) return;
+      const key = line.substring(0, equalIndex).trim();
+      const value = line.substring(equalIndex + 1).trim();
+      if (key && value) {
+        variables.push({
+          key,
+          value,
+          // Detect sensitive keys
+          isSecret: /KEY|SECRET|PASSWORD|TOKEN|CREDENTIAL|AUTH/i.test(key),
+          source: filename
+        });
+      }
+    });
+    return variables;
+  } catch (error) {
+    console.error(`Error parsing ${filename} for ${projectPath}:`, error);
+    return [];
+  }
+}
+async function loadAllEnvVars(projectPath) {
+  const envFiles = [
+    ".env",
+    ".env.test",
+    ".env.test.local",
+    ".env.production",
+    ".env.production.local",
+    ".env.development",
+    ".env.development.local",
+    ".env.local"
+  ];
+  const mergedVars = /* @__PURE__ */ new Map();
+  for (const filename of envFiles) {
+    const vars = await parseEnvFile(projectPath, filename);
+    vars.forEach((v) => {
+      mergedVars.set(v.key, v);
+    });
+  }
+  return Array.from(mergedVars.values());
+}
 async function checkWbsExists(projectPath) {
   try {
     const wbsPath = path$1.join(projectPath, "wbs.yaml");
@@ -18347,6 +18400,50 @@ function setupIpcHandlers() {
     } catch (error) {
       console.error("Error saving WBS:", error);
       throw error;
+    }
+  });
+  ipcMain$1.handle("get-quick-notes", async () => {
+    try {
+      const notes = store.get("quickNotes", []);
+      return notes.sort((a, b) => b.timestamp - a.timestamp).slice(0, 10);
+    } catch (error) {
+      console.error("Error getting quick notes:", error);
+      return [];
+    }
+  });
+  ipcMain$1.handle("save-quick-note", async (_event, note) => {
+    try {
+      const notes = store.get("quickNotes", []);
+      const newNote = {
+        id: `note-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        timestamp: Date.now(),
+        ...note
+      };
+      const updatedNotes = [newNote, ...notes].slice(0, 100);
+      store.set("quickNotes", updatedNotes);
+      return newNote;
+    } catch (error) {
+      console.error("Error saving quick note:", error);
+      throw error;
+    }
+  });
+  ipcMain$1.handle("delete-quick-note", async (_event, noteId) => {
+    try {
+      const notes = store.get("quickNotes", []);
+      const updatedNotes = notes.filter((note) => note.id !== noteId);
+      store.set("quickNotes", updatedNotes);
+      return { success: true };
+    } catch (error) {
+      console.error("Error deleting quick note:", error);
+      throw error;
+    }
+  });
+  ipcMain$1.handle("read-env", async (_event, projectPath) => {
+    try {
+      return await loadAllEnvVars(projectPath);
+    } catch (error) {
+      console.error("Error reading .env files:", error);
+      return [];
     }
   });
 }

@@ -20,7 +20,8 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, onUpdate }) => {
 
   // Status toggle logic
   const statusCycle: Task['status'][] = ['Ready', 'In Progress', 'Review', 'Done'];
-  const handleStatusToggle = () => {
+  const handleStatusToggle = (e: React.MouseEvent) => {
+    e.stopPropagation(); // 부모 요소로 이벤트 전파 방지
     const currentIndex = statusCycle.indexOf(task.status);
     const nextStatus = statusCycle[(currentIndex + 1) % statusCycle.length];
     onUpdate({ ...task, status: nextStatus });
@@ -63,26 +64,14 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, onUpdate }) => {
   const statusDisplay = getStatusDisplay();
   const StatusIcon = statusDisplay.icon;
 
-  // Get glow effect based on status
-  const getStatusGlow = () => {
-    switch (task.status) {
-      case 'In Progress':
-        return 'shadow-glow-cyan animate-pulse-slow';
-      case 'Done':
-        return 'shadow-glow-purple';
-      default:
-        return '';
-    }
-  };
-
   return (
-    <div className="border-2 border-gray-200 rounded-lg p-4 hover:border-brand-purple hover:shadow-lg transition-all duration-300 bg-white">
+    <div className="border border-slate-200 rounded-lg p-4 hover:border-slate-300 hover:shadow-sm transition-all duration-300 bg-white cursor-pointer">
       {/* Task Header */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-3" onClick={() => setIsExpanded(!isExpanded)}>
         {/* Status Toggle Button */}
         <button
           onClick={handleStatusToggle}
-          className={`flex items-center justify-center w-10 h-10 rounded-full ${statusDisplay.bg} hover:scale-110 transition-all duration-300 flex-shrink-0 ${getStatusGlow()}`}
+          className={`flex items-center justify-center w-10 h-10 rounded-full ${statusDisplay.bg} hover:scale-105 transition-all duration-300 flex-shrink-0`}
           title={`Status: ${task.status} (click to change)`}
         >
           <StatusIcon className={`w-6 h-6 ${statusDisplay.color}`} />
@@ -106,8 +95,11 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, onUpdate }) => {
 
         {/* Expand/Collapse Button */}
         <button
-          onClick={() => setIsExpanded(!isExpanded)}
-          className="p-1 text-gray-400 hover:text-gray-600 transition-colors flex-shrink-0"
+          onClick={(e) => {
+            e.stopPropagation(); // 부모 요소로 이벤트 전파 방지
+            setIsExpanded(!isExpanded);
+          }}
+          className="p-1.5 rounded-lg border border-slate-300 bg-white text-slate-600 hover:bg-slate-100 hover:border-slate-400 transition-all duration-300 flex-shrink-0"
           title={isExpanded ? 'Collapse' : 'Expand'}
         >
           {isExpanded ? <ChevronDown className="w-5 h-5" /> : <ChevronRight className="w-5 h-5" />}
@@ -141,13 +133,13 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, onUpdate }) => {
                   className={`px-4 py-2 rounded-full text-sm font-bold transition-all duration-300 ${
                     task.priority === priority
                       ? priority === 'P0'
-                        ? 'bg-red-500 text-white shadow-glow-orange scale-105'
+                        ? 'bg-red-500 text-white shadow-sm scale-105'
                         : priority === 'P1'
-                        ? 'bg-orange-500 text-white shadow-glow-orange scale-105'
+                        ? 'bg-orange-500 text-white shadow-sm scale-105'
                         : priority === 'P2'
-                        ? 'bg-yellow-500 text-white shadow-md scale-105'
-                        : 'bg-blue-500 text-white shadow-glow-cyan scale-105'
-                      : 'bg-gray-200 text-gray-600 hover:bg-gray-300 hover:scale-105'
+                        ? 'bg-yellow-500 text-white shadow-sm scale-105'
+                        : 'bg-blue-500 text-white shadow-sm scale-105'
+                      : 'bg-slate-200 text-slate-600 hover:bg-slate-300 hover:scale-105'
                   }`}
                 >
                   {priority}

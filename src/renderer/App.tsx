@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
-import { FolderOpen, RefreshCw, Settings, X } from 'lucide-react';
+import { FolderOpen, RefreshCw, Settings, X, StickyNote } from 'lucide-react';
 import ProjectCard from './components/ProjectCard';
 import SettingsModal from './components/SettingsModal';
 import ProjectDetailModal from './components/ProjectDetailModal';
+import NotesWidget from './components/NotesWidget';
 import type { Project, Settings as SettingsType } from '../shared/types';
 
 interface Toast {
@@ -20,6 +21,7 @@ function App() {
   const [toast, setToast] = useState<Toast | null>(null);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [showDetailModal, setShowDetailModal] = useState<boolean>(false);
+  const [showNotesWidget, setShowNotesWidget] = useState<boolean>(false);
 
   // Load root directory and projects on mount
   useEffect(() => {
@@ -120,6 +122,14 @@ function App() {
     setSelectedProject(null);
   };
 
+  const handleOpenProjectFromNote = (projectPath: string) => {
+    const project = projects.find((p) => p.path === projectPath);
+    if (project) {
+      handleProjectClick(project);
+      setShowNotesWidget(false);
+    }
+  };
+
   // Scenario A: Welcome screen (no root directory configured)
   if (!rootPath && !loading) {
     return (
@@ -180,6 +190,18 @@ function App() {
               >
                 <Settings className="w-4 h-4" />
                 Settings
+              </button>
+              <button
+                onClick={() => setShowNotesWidget(!showNotesWidget)}
+                className={`inline-flex items-center gap-2 font-medium py-2 px-4 rounded-lg border transition-colors duration-200 ${
+                  showNotesWidget
+                    ? 'bg-indigo-600 text-white border-indigo-600 hover:bg-indigo-700'
+                    : 'bg-white hover:bg-gray-50 text-gray-700 border-gray-300'
+                }`}
+                title="Quick Notes"
+              >
+                <StickyNote className="w-4 h-4" />
+                Notes
               </button>
             </div>
           </div>
@@ -245,6 +267,14 @@ function App() {
         isOpen={showDetailModal}
         onClose={handleCloseDetailModal}
         onLaunch={handleLaunch}
+      />
+
+      {/* Notes Widget */}
+      <NotesWidget
+        isOpen={showNotesWidget}
+        onClose={() => setShowNotesWidget(false)}
+        selectedProject={selectedProject}
+        onOpenProject={handleOpenProjectFromNote}
       />
 
       {/* Toast Notification */}

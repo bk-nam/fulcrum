@@ -1,5 +1,5 @@
 import { contextBridge, ipcRenderer } from 'electron';
-import type { Project, Settings } from '../shared/types.js';
+import type { Project, Settings, QuickNote, EnvVariable } from '../shared/types.js';
 
 // Expose protected methods that allow the renderer process to use
 // the ipcRenderer without exposing the entire object
@@ -50,6 +50,24 @@ contextBridge.exposeInMainWorld('electron', {
   saveWbs: (projectPath: string, content: string): Promise<{ success: boolean }> => {
     return ipcRenderer.invoke('save-wbs', projectPath, content);
   },
+
+  // Quick Notes operations
+  getQuickNotes: (): Promise<QuickNote[]> => {
+    return ipcRenderer.invoke('get-quick-notes');
+  },
+
+  saveQuickNote: (note: Omit<QuickNote, 'id' | 'timestamp'>): Promise<QuickNote> => {
+    return ipcRenderer.invoke('save-quick-note', note);
+  },
+
+  deleteQuickNote: (noteId: string): Promise<{ success: boolean }> => {
+    return ipcRenderer.invoke('delete-quick-note', noteId);
+  },
+
+  // Env file operations
+  readEnv: (projectPath: string): Promise<EnvVariable[]> => {
+    return ipcRenderer.invoke('read-env', projectPath);
+  },
 });
 
 // Type definitions for TypeScript
@@ -64,6 +82,10 @@ export interface ElectronAPI {
   createWbsTemplate: (projectPath: string) => Promise<{ success: boolean }>;
   readWbs: (projectPath: string) => Promise<string>;
   saveWbs: (projectPath: string, content: string) => Promise<{ success: boolean }>;
+  getQuickNotes: () => Promise<QuickNote[]>;
+  saveQuickNote: (note: Omit<QuickNote, 'id' | 'timestamp'>) => Promise<QuickNote>;
+  deleteQuickNote: (noteId: string) => Promise<{ success: boolean }>;
+  readEnv: (projectPath: string) => Promise<EnvVariable[]>;
 }
 
 declare global {

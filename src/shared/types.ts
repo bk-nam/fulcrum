@@ -18,3 +18,18 @@ export interface Settings {
   editorCommand: string;
   terminalCommand?: string;
 }
+
+export interface QuickNote {
+  id: string;
+  timestamp: number;
+  note: string;
+  projectPath?: string;
+  pinned: boolean;
+}
+
+export interface EnvVariable {
+  key: string;
+  value: string;
+  isSecret: boolean;
+  source: string; // e.g., '.env', '.env.local', etc.
+}

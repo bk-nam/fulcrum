@@ -61,35 +61,28 @@ const GuiEditor: React.FC<GuiEditorProps> = ({ parsedWbs, onUpdate }) => {
   return (
     <div className="flex flex-col h-full">
       {/* Overall Progress Bar */}
-      <div className="mb-6 p-5 bg-gradient-to-br from-purple-50 via-pink-50 to-orange-50 rounded-xl border-2 border-transparent shadow-lg relative overflow-hidden"
-           style={{
-             backgroundImage: 'linear-gradient(to bottom right, rgb(250, 245, 255), rgb(252, 231, 243), rgb(255, 247, 237)), linear-gradient(135deg, #8B5CF6, #EC4899, #F97316)',
-             backgroundOrigin: 'border-box',
-             backgroundClip: 'padding-box, border-box',
-           }}>
+      <div className="mb-6 p-5 bg-slate-50 rounded-xl border border-slate-200 shadow-sm">
         <div className="flex items-center justify-between mb-3">
-          <h3 className="text-sm font-bold bg-gradient-primary bg-clip-text text-transparent">Overall Progress</h3>
-          <span className="text-sm font-bold bg-gradient-rainbow bg-clip-text text-transparent">
+          <h3 className="text-sm font-semibold text-slate-700">Overall Progress</h3>
+          <span className="text-sm font-medium text-slate-600">
             {progress.completed} / {progress.total} tasks completed
           </span>
         </div>
         <div className="relative">
-          <div className="w-full h-5 bg-gray-200 rounded-full overflow-hidden shadow-inner">
+          <div className="w-full h-4 bg-slate-200 rounded-full overflow-hidden">
             <div
-              className="h-full bg-gradient-rainbow transition-all duration-700 flex items-center justify-end pr-3 shadow-glow-purple"
+              className="h-full bg-indigo-600 transition-all duration-700 flex items-center justify-end pr-3"
               style={{
                 width: `${progress.percentage}%`,
-                backgroundSize: '200% 200%',
-                animation: progress.percentage > 0 ? 'gradient 3s ease infinite' : 'none',
               }}
             >
               {progress.percentage > 15 && (
-                <span className="text-xs font-bold text-white drop-shadow-md">{progress.percentage}%</span>
+                <span className="text-xs font-semibold text-white">{progress.percentage}%</span>
               )}
             </div>
           </div>
           {progress.percentage <= 15 && progress.percentage > 0 && (
-            <span className="absolute left-3 top-0.5 text-xs font-bold bg-gradient-primary bg-clip-text text-transparent">
+            <span className="absolute left-3 top-0 text-xs font-semibold text-slate-700">
               {progress.percentage}%
             </span>
           )}

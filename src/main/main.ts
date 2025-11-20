@@ -6,7 +6,7 @@ import { spawn, exec } from 'child_process';
 import { promisify } from 'util';
 import Store from 'electron-store';
 import * as yaml from 'js-yaml';
-import type { Project, Settings } from '../shared/types.js';
+import type { Project, Settings, QuickNote, EnvVariable } from '../shared/types.js';
 import { WBS_TEMPLATE } from '../shared/constants.js';
 
 const execAsync = promisify(exec);
@@ -19,6 +19,7 @@ let mainWindow: BrowserWindow | null = null;
 interface StoreSchema {
   rootDirectory?: string;
   settings?: Settings;
+  quickNotes?: QuickNote[];
 }
 
 const store = new Store<StoreSchema>({
@@ -242,6 +243,85 @@ async function launchProject(projectPath: string): Promise<{ success: boolean; e
 }
 
 /**
+ * Parse a single .env file and extract environment variables
+ */
+async function parseEnvFile(projectPath: string, filename: string): Promise<EnvVariable[]> {
+  try {
+    const envPath = path.join(projectPath, filename);
+
+    // Check if file exists
+    try {
+      await fs.access(envPath);
+    } catch {
+      return []; // File doesn't exist
+    }
+
+    // Read and parse .env file
+    const content = await fs.readFile(envPath, 'utf-8');
+    const variables: EnvVariable[] = [];
+
+    content.split('\n').forEach((line) => {
+      line = line.trim();
+
+      // Skip empty lines and comments
+      if (!line || line.startsWith('#')) return;
+
+      // Parse KEY=VALUE format
+      const equalIndex = line.indexOf('=');
+      if (equalIndex === -1) return;
+
+      const key = line.substring(0, equalIndex).trim();
+      const value = line.substring(equalIndex + 1).trim();
+
+      if (key && value) {
+        variables.push({
+          key,
+          value,
+          // Detect sensitive keys
+          isSecret: /KEY|SECRET|PASSWORD|TOKEN|CREDENTIAL|AUTH/i.test(key),
+          source: filename,
+        });
+      }
+    });
+
+    return variables;
+  } catch (error) {
+    console.error(`Error parsing ${filename} for ${projectPath}:`, error);
+    return [];
+  }
+}
+
+/**
+ * Load and merge all .env files with priority order
+ */
+async function loadAllEnvVars(projectPath: string): Promise<EnvVariable[]> {
+  // Priority order (low to high)
+  const envFiles = [
+    '.env',
+    '.env.test',
+    '.env.test.local',
+    '.env.production',
+    '.env.production.local',
+    '.env.development',
+    '.env.development.local',
+    '.env.local',
+  ];
+
+  const mergedVars = new Map<string, EnvVariable>();
+
+  // Read files in priority order (low to high)
+  for (const filename of envFiles) {
+    const vars = await parseEnvFile(projectPath, filename);
+    vars.forEach((v) => {
+      // Higher priority files override lower priority ones
+      mergedVars.set(v.key, v);
+    });
+  }
+
+  return Array.from(mergedVars.values());
+}
+
+/**
  * WBS File Operations
  */
 
@@ -432,6 +512,65 @@ function setupIpcHandlers(): void {
     } catch (error) {
       console.error('Error saving WBS:', error);
       throw error;
+    }
+  });
+
+  // Handler: Get quick notes
+  ipcMain.handle('get-quick-notes', async () => {
+    try {
+      const notes = store.get('quickNotes', []);
+      // Return most recent 10 notes, sorted by timestamp descending
+      return notes
+        .sort((a, b) => b.timestamp - a.timestamp)
+        .slice(0, 10);
+    } catch (error) {
+      console.error('Error getting quick notes:', error);
+      return [];
+    }
+  });
+
+  // Handler: Save quick note
+  ipcMain.handle('save-quick-note', async (_event, note: Omit<QuickNote, 'id' | 'timestamp'>) => {
+    try {
+      const notes = store.get('quickNotes', []);
+
+      const newNote: QuickNote = {
+        id: `note-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        timestamp: Date.now(),
+        ...note,
+      };
+
+      // Add new note and keep only most recent 100
+      const updatedNotes = [newNote, ...notes].slice(0, 100);
+      store.set('quickNotes', updatedNotes);
+
+      return newNote;
+    } catch (error) {
+      console.error('Error saving quick note:', error);
+      throw error;
+    }
+  });
+
+  // Handler: Delete quick note
+  ipcMain.handle('delete-quick-note', async (_event, noteId: string) => {
+    try {
+      const notes = store.get('quickNotes', []);
+      const updatedNotes = notes.filter(note => note.id !== noteId);
+      store.set('quickNotes', updatedNotes);
+      return { success: true };
+    } catch (error) {
+      console.error('Error deleting quick note:', error);
+      throw error;
+    }
+  });
+
+  // Handler: Read .env files
+  ipcMain.handle('read-env', async (_event, projectPath: string) => {
+    try {
+      return await loadAllEnvVars(projectPath);
+    } catch (error) {
+      console.error('Error reading .env files:', error);
+      return [];
     }
   });
 }

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, Rocket, Copy, CheckCircle, Layout, Code } from 'lucide-react';
+import { X, Rocket, Copy, CheckCircle, Layout, Code, KeyRound, Eye, EyeOff } from 'lucide-react';
 import * as yaml from 'js-yaml';
-import type { Project } from '../../shared/types';
+import type { Project, EnvVariable } from '../../shared/types';
 import { AI_CONTEXT_PROMPT_TEMPLATE } from '../../shared/constants';
 import GuiEditor from './GuiEditor';
 
@@ -26,9 +26,13 @@ const ProjectDetailModal: React.FC<ProjectDetailModalProps> = ({
   const [copySuccess, setCopySuccess] = useState(false);
 
   // GUI Mode state
-  const [viewMode, setViewMode] = useState<'gui' | 'code'>('gui');
+  const [viewMode, setViewMode] = useState<'gui' | 'code' | 'env'>('gui');
   const [parsedWbs, setParsedWbs] = useState<any>(null);
   const [parseError, setParseError] = useState<string | null>(null);
+
+  // Env Mode state
+  const [envVars, setEnvVars] = useState<EnvVariable[]>([]);
+  const [showValues, setShowValues] = useState<Record<string, boolean>>({});
 
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const initialContentRef = useRef<string>('');
@@ -174,6 +178,42 @@ const ProjectDetailModal: React.FC<ProjectDetailModalProps> = ({
     }
   }, [viewMode, wbsContent, wbsExists]);
 
+  // Load env variables when switching to Env mode
+  useEffect(() => {
+    if (viewMode === 'env' && project && isOpen) {
+      loadEnvVars();
+    }
+  }, [viewMode, project, isOpen]);
+
+  const loadEnvVars = async () => {
+    if (!project) return;
+
+    try {
+      const vars = await window.electron.readEnv(project.path);
+      setEnvVars(vars);
+    } catch (error) {
+      console.error('Error loading env vars:', error);
+      setEnvVars([]);
+    }
+  };
+
+  const toggleShowValue = (key: string) => {
+    setShowValues(prev => ({
+      ...prev,
+      [key]: !prev[key],
+    }));
+  };
+
+  const copyToClipboard = async (value: string) => {
+    try {
+      await navigator.clipboard.writeText(value);
+      setCopySuccess(true);
+      setTimeout(() => setCopySuccess(false), 2000);
+    } catch (error) {
+      console.error('Error copying to clipboard:', error);
+    }
+  };
+
   const formatLastSaved = (date: Date): string => {
     return date.toLocaleTimeString('en-US', {
       hour: '2-digit',
@@ -197,7 +237,7 @@ const ProjectDetailModal: React.FC<ProjectDetailModalProps> = ({
           <div className="flex items-center gap-3">
             <button
               onClick={handleLaunchClick}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors shadow-sm"
               title="Launch project"
             >
               <Rocket className="w-4 h-4" />
@@ -208,7 +248,7 @@ const ProjectDetailModal: React.FC<ProjectDetailModalProps> = ({
               <>
                 <button
                   onClick={handleCopyContext}
-                  className="inline-flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors"
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-slate-600 hover:bg-slate-700 text-white rounded-lg transition-colors shadow-sm"
                   title="Copy context for AI"
                 >
                   {copySuccess ? (
@@ -225,13 +265,13 @@ const ProjectDetailModal: React.FC<ProjectDetailModalProps> = ({
                 </button>
 
                 {/* View Mode Toggle */}
-                <div className="flex items-center gap-1 bg-gray-100 p-1 rounded-lg">
+                <div className="flex items-center gap-2 p-1 rounded-lg border border-slate-300 bg-white">
                   <button
                     onClick={() => setViewMode('gui')}
-                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded transition-colors text-sm font-medium ${
+                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md transition-all duration-300 text-sm font-medium ${
                       viewMode === 'gui'
-                        ? 'bg-white text-blue-600 shadow-sm'
-                        : 'text-gray-600 hover:text-gray-900'
+                        ? 'bg-indigo-600 text-white shadow-sm'
+                        : 'bg-white text-slate-700 hover:bg-slate-100'
                     }`}
                     title="Visual Editor"
                   >
@@ -240,15 +280,27 @@ const ProjectDetailModal: React.FC<ProjectDetailModalProps> = ({
                   </button>
                   <button
                     onClick={() => setViewMode('code')}
-                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded transition-colors text-sm font-medium ${
+                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md transition-all duration-300 text-sm font-medium ${
                       viewMode === 'code'
-                        ? 'bg-white text-blue-600 shadow-sm'
-                        : 'text-gray-600 hover:text-gray-900'
+                        ? 'bg-indigo-600 text-white shadow-sm'
+                        : 'bg-white text-slate-700 hover:bg-slate-100'
                     }`}
                     title="Code Editor"
                   >
                     <Code className="w-4 h-4" />
                     Code
+                  </button>
+                  <button
+                    onClick={() => setViewMode('env')}
+                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md transition-all duration-300 text-sm font-medium ${
+                      viewMode === 'env'
+                        ? 'bg-indigo-600 text-white shadow-sm'
+                        : 'bg-white text-slate-700 hover:bg-slate-100'
+                    }`}
+                    title="Environment Variables"
+                  >
+                    <KeyRound className="w-4 h-4" />
+                    Env
                   </button>
                 </div>
               </>
@@ -256,7 +308,7 @@ const ProjectDetailModal: React.FC<ProjectDetailModalProps> = ({
 
             <button
               onClick={onClose}
-              className="p-2 text-gray-400 hover:text-gray-600 transition-colors"
+              className="p-2 rounded-lg border border-slate-300 bg-white text-slate-600 hover:bg-slate-100 hover:border-slate-400 transition-all duration-300"
               title="Close"
             >
               <X className="w-6 h-6" />
@@ -310,11 +362,11 @@ const ProjectDetailModal: React.FC<ProjectDetailModalProps> = ({
                 </div>
               )}
 
-              {/* Editor: GUI or Code */}
+              {/* Editor: GUI, Code, or Env */}
               <div className="flex-1 overflow-hidden">
                 {viewMode === 'gui' && parsedWbs ? (
                   <GuiEditor parsedWbs={parsedWbs} onUpdate={handleGuiUpdate} />
-                ) : (
+                ) : viewMode === 'code' ? (
                   <textarea
                     value={wbsContent}
                     onChange={(e) => setWbsContent(e.target.value)}
@@ -326,6 +378,78 @@ const ProjectDetailModal: React.FC<ProjectDetailModalProps> = ({
                       lineHeight: '1.6',
                     }}
                   />
+                ) : (
+                  /* Env Mode */
+                  <div className="h-full overflow-y-auto p-6">
+                    {envVars.length === 0 ? (
+                      <div className="flex flex-col items-center justify-center h-full text-slate-500">
+                        <KeyRound className="w-16 h-16 mb-4 opacity-50" />
+                        <p className="text-lg font-medium">No .env files found</p>
+                        <p className="text-sm mt-2">Create .env, .env.local, or other environment files in your project root</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-4">
+                        {/* File Summary */}
+                        <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                          <p className="text-sm font-medium text-blue-900 mb-1">
+                            Loaded from {new Set(envVars.map(v => v.source)).size} file(s)
+                          </p>
+                          <p className="text-xs text-blue-700">
+                            {Array.from(new Set(envVars.map(v => v.source))).join(', ')}
+                          </p>
+                        </div>
+
+                        {/* Variables List */}
+                        <div className="space-y-3">
+                        {envVars.map((env) => (
+                          <div
+                            key={env.key}
+                            className="flex items-center gap-3 p-4 bg-slate-50 rounded-lg border border-slate-200 hover:border-slate-300 transition-colors"
+                          >
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 mb-1">
+                                <span className="font-mono text-sm font-semibold text-slate-700">
+                                  {env.key}
+                                </span>
+                                {env.isSecret && (
+                                  <span className="px-2 py-0.5 text-xs font-medium bg-amber-100 text-amber-700 rounded-full">
+                                    Secret
+                                  </span>
+                                )}
+                              </div>
+                              <span className="font-mono text-sm text-slate-600 break-all">
+                                {showValues[env.key] ? env.value : '••••••••••••••••'}
+                              </span>
+                              <p className="text-xs text-slate-400 mt-1">
+                                from {env.source}
+                              </p>
+                            </div>
+                            <div className="flex items-center gap-2 flex-shrink-0">
+                              <button
+                                onClick={() => toggleShowValue(env.key)}
+                                className="p-2 text-slate-500 hover:text-slate-700 hover:bg-slate-200 rounded-lg transition-colors"
+                                title={showValues[env.key] ? 'Hide value' : 'Show value'}
+                              >
+                                {showValues[env.key] ? (
+                                  <EyeOff className="w-4 h-4" />
+                                ) : (
+                                  <Eye className="w-4 h-4" />
+                                )}
+                              </button>
+                              <button
+                                onClick={() => copyToClipboard(env.value)}
+                                className="p-2 text-slate-500 hover:text-slate-700 hover:bg-slate-200 rounded-lg transition-colors"
+                                title="Copy value"
+                              >
+                                <Copy className="w-4 h-4" />
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 )}
               </div>
             </div>
