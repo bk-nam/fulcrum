@@ -1,0 +1,157 @@
+project_info:
+  name: "Fulcrum"
+  description: "Personal Developer Platform (PDP) to manage lifecycle, context, and assets of multiple side-projects."
+  period: "2025-11-20 ~ 2026-03-31"
+  owner: "Maker & Gemini"
+  tech_stack: ["Electron", "React", "TypeScript", "Vite", "Tailwind CSS", "shadcn/ui", "electron-store"]
+
+milestones:
+  - title: "v0.1: Foundation (Scanner & Launcher)"
+    due_date: "2025-11-20"
+    status: "Done"
+  - title: "v0.2: Command Center (WBS Editor)"
+    due_date: "2025-11-20"
+    status: "Done"
+  - title: "v0.3: Intelligence (Dashboard & Metadata)"
+    due_date: "2025-11-22"
+    status: "Pending"
+  - title: "v0.5: Lifecycle Management (Zombie Killer)"
+    due_date: "2025-12-01"
+    status: "Pending"
+  - title: "v0.8: The Factory (Scaffolding)"
+    due_date: "2025-12-15"
+    status: "Pending"
+  - title: "v1.0: Full Context & Monitoring"
+    due_date: "2026-01-30"
+    status: "Pending"
+
+phases:
+  # --- Completed Phases ---
+  - name: "Phase 1: Genesis (Core Engine)"
+    tasks:
+      - id: "CORE-001"
+        title: "Project Scaffolding"
+        status: "Done"
+        priority: "P0"
+        spec: "Setup Electron + Vite + React + TS. Configure Tailwind/shadcn."
+      - id: "CORE-002"
+        title: "Local Scanner System"
+        status: "Done"
+        priority: "P0"
+        spec: "Recursive directory scanning. Project type detection (Node/Python/Rust)."
+
+  - name: "Phase 2: Ignition (Launcher)"
+    tasks:
+      - id: "LNC-001"
+        title: "Context Restoration Launcher"
+        status: "Done"
+        priority: "P0"
+        spec: "Simultaneous launch of Editor (Antigravity) & Terminal. Settings UI for custom paths."
+
+  - name: "Phase 3: Command Center (WBS)"
+    tasks:
+      - id: "WBS-001"
+        title: "Structured YAML Editor"
+        status: "Done"
+        priority: "P0"
+        spec: "Project Detail Modal. Read/Write `wbs.yaml`. 'Copy Context for AI' feature. Debounced auto-save."
+
+  # --- Upcoming Phases (Based on Original Vision) ---
+  - name: "Phase 4: Intelligence (Dashboard)"
+    tasks:
+      - id: "DASH-001"
+        title: "Metadata Sync & UI Polish"
+        status: "Ready"
+        priority: "P1"
+        period: "2025-11-21"
+        spec: |
+          Parse `wbs.yaml` during scan.
+          Display Tech Stack badges and Current Phase on dashboard cards.
+          Visualize project health/status without opening details.
+
+  - name: "Phase 5: Lifecycle Management (Zombie Projects)"
+    tasks:
+      - id: "LIFE-001"
+        title: "Last Touched Heatmap"
+        status: "Pending"
+        priority: "P2"
+        spec: |
+          Calculate days since last file modification.
+          Color code cards: Green (<3 days), Yellow (<2 weeks), Red (>1 month).
+      - id: "LIFE-002"
+        title: "Status Tagging System"
+        status: "Pending"
+        priority: "P2"
+        spec: |
+          Manual tagging: Active, Maintenance, Archive, Idea.
+          Filter/Sort dashboard by these tags.
+      - id: "LIFE-003"
+        title: "Tech Stack Indexer"
+        status: "Pending"
+        priority: "P3"
+        spec: |
+          Deep scan `package.json` / `requirements.txt`.
+          Create a search index to answer "Where did I use 'framer-motion'?"
+
+  - name: "Phase 6: The Factory (Scaffolding)"
+    tasks:
+      - id: "SCAF-001"
+        title: "One-Click Boilerplate"
+        status: "Pending"
+        priority: "P1"
+        spec: |
+          UI to select templates (Next.js, Python/FastAPI).
+          Execute system commands to clone/init projects.
+      - id: "SCAF-002"
+        title: "Port Manager"
+        status: "Pending"
+        priority: "P2"
+        spec: |
+          Registry of used local ports (3000, 8000, etc.).
+          Auto-assign next available port or warn on conflict.
+
+  - name: "Phase 7: Deep Context"
+    tasks:
+      - id: "CTX-001"
+        title: "Micro-log System"
+        status: "Pending"
+        priority: "P2"
+        spec: |
+          On app close (or project close), prompt: "Where did you leave off?".
+          Show this note as a toast/modal upon next launch.
+      - id: "CTX-002"
+        title: "Env Snapshot Viewer"
+        status: "Pending"
+        priority: "P3"
+        spec: |
+          Read-only view of `.env` keys (hide values by default).
+          Quick toggle to copy values.
+
+  - name: "Phase 8: Idea Incubator"
+    tasks:
+      - id: "IDEA-001"
+        title: "Scratchpad"
+        status: "Pending"
+        priority: "P3"
+        spec: |
+          Create 'Virtual Projects' (no folder yet).
+          Allow writing memos/links.
+          "Convert to Project" button to trigger Phase 6 Scaffolding.
+
+  - name: "Phase 9: Cockpit (Monitoring)"
+    tasks:
+      - id: "MON-001"
+        title: "Process Killer"
+        status: "Pending"
+        priority: "P3"
+        spec: |
+          List active PIDs related to project paths.
+          "Kill All" button to force stop zombie servers.
+
+risks:
+  - severity: "High"
+    description: "Performance scaling with Deep Search (Phase 5)"
+    mitigation: "Implement indexing in a background worker or separate process."
+  - severity: "Medium"
+    description: "Cross-platform terminal integration (node-pty) issues"
+    mitigation: "Stick to external terminal launching for MVP, integrated terminal is P3."
