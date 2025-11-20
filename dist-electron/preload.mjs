@@ -51,5 +51,18 @@ electron.contextBridge.exposeInMainWorld("electron", {
   // Env file operations
   readEnv: (projectPath) => {
     return electron.ipcRenderer.invoke("read-env", projectPath);
+  },
+  // Virtual Project operations
+  getVirtualProjects: () => {
+    return electron.ipcRenderer.invoke("get-virtual-projects");
+  },
+  saveVirtualProject: (vp) => {
+    return electron.ipcRenderer.invoke("save-virtual-project", vp);
+  },
+  deleteVirtualProject: (vpId) => {
+    return electron.ipcRenderer.invoke("delete-virtual-project", vpId);
+  },
+  materializeVirtualProject: (vpId, targetDirectory, folderName) => {
+    return electron.ipcRenderer.invoke("materialize-virtual-project", vpId, targetDirectory, folderName);
   }
 });

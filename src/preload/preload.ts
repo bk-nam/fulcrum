@@ -1,5 +1,5 @@
 import { contextBridge, ipcRenderer } from 'electron';
-import type { Project, Settings, QuickNote, EnvVariable } from '../shared/types.js';
+import type { Project, Settings, QuickNote, EnvVariable, VirtualProject } from '../shared/types.js';
 
 // Expose protected methods that allow the renderer process to use
 // the ipcRenderer without exposing the entire object
@@ -68,6 +68,23 @@ contextBridge.exposeInMainWorld('electron', {
   readEnv: (projectPath: string): Promise<EnvVariable[]> => {
     return ipcRenderer.invoke('read-env', projectPath);
   },
+
+  // Virtual Project operations
+  getVirtualProjects: (): Promise<VirtualProject[]> => {
+    return ipcRenderer.invoke('get-virtual-projects');
+  },
+
+  saveVirtualProject: (vp: Omit<VirtualProject, 'id' | 'createdAt' | 'updatedAt'> & { id?: string }): Promise<VirtualProject> => {
+    return ipcRenderer.invoke('save-virtual-project', vp);
+  },
+
+  deleteVirtualProject: (vpId: string): Promise<{ success: boolean }> => {
+    return ipcRenderer.invoke('delete-virtual-project', vpId);
+  },
+
+  materializeVirtualProject: (vpId: string, targetDirectory: string, folderName: string): Promise<{ success: boolean; projectPath: string }> => {
+    return ipcRenderer.invoke('materialize-virtual-project', vpId, targetDirectory, folderName);
+  },
 });
 
 // Type definitions for TypeScript
@@ -86,6 +103,10 @@ export interface ElectronAPI {
   saveQuickNote: (note: Omit<QuickNote, 'id' | 'timestamp'>) => Promise<QuickNote>;
   deleteQuickNote: (noteId: string) => Promise<{ success: boolean }>;
   readEnv: (projectPath: string) => Promise<EnvVariable[]>;
+  getVirtualProjects: () => Promise<VirtualProject[]>;
+  saveVirtualProject: (vp: Omit<VirtualProject, 'id' | 'createdAt' | 'updatedAt'> & { id?: string }) => Promise<VirtualProject>;
+  deleteVirtualProject: (vpId: string) => Promise<{ success: boolean }>;
+  materializeVirtualProject: (vpId: string, targetDirectory: string, folderName: string) => Promise<{ success: boolean; projectPath: string }>;
 }
 
 declare global {

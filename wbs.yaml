@@ -152,7 +152,7 @@ phases:
     tasks:
       - id: IDEA-001
         title: Scratchpad
-        status: Pending
+        status: Done
         priority: P3
         spec: |
           Create 'Virtual Projects' (no folder yet).

@@ -6,7 +6,7 @@ import { spawn, exec } from 'child_process';
 import { promisify } from 'util';
 import Store from 'electron-store';
 import * as yaml from 'js-yaml';
-import type { Project, Settings, QuickNote, EnvVariable } from '../shared/types.js';
+import type { Project, Settings, QuickNote, EnvVariable, VirtualProject } from '../shared/types.js';
 import { WBS_TEMPLATE } from '../shared/constants.js';
 
 const execAsync = promisify(exec);
@@ -20,6 +20,7 @@ interface StoreSchema {
   rootDirectory?: string;
   settings?: Settings;
   quickNotes?: QuickNote[];
+  virtualProjects?: VirtualProject[];
 }
 
 const store = new Store<StoreSchema>({
@@ -116,17 +117,22 @@ async function parseWbsMetadata(projectPath: string, lastModified: number): Prom
         .filter((item: any) => typeof item === 'string');
     }
 
-    // Extract current phase (first phase that is not "Done")
+    // Extract current phase (first phase that has incomplete tasks)
     let currentPhase: string | undefined;
     if (wbsData.phases && Array.isArray(wbsData.phases)) {
-      const activePhase = wbsData.phases.find((phase: any) =>
-        phase.status && phase.status.toLowerCase() !== 'done'
-      );
+      const activePhase = wbsData.phases.find((phase: any) => {
+        // Check if phase has tasks
+        if (!phase.tasks || !Array.isArray(phase.tasks) || phase.tasks.length === 0) {
+          return false; // Skip phases with no tasks
+        }
+        // Phase is active if it has at least one task that is not "Done"
+        return phase.tasks.some((task: any) => task.status !== 'Done');
+      });
 
       if (activePhase && activePhase.name) {
         currentPhase = activePhase.name;
       } else if (wbsData.phases.length > 0) {
-        // All phases are done
+        // All phases have all tasks done
         currentPhase = 'All Phases Complete';
       }
     }
@@ -571,6 +577,163 @@ function setupIpcHandlers(): void {
     } catch (error) {
       console.error('Error reading .env files:', error);
       return [];
+    }
+  });
+
+  // Handler: Get virtual projects
+  ipcMain.handle('get-virtual-projects', async () => {
+    try {
+      const virtualProjects = store.get('virtualProjects', []);
+      return virtualProjects.sort((a, b) => b.updatedAt - a.updatedAt);
+    } catch (error) {
+      console.error('Error getting virtual projects:', error);
+      return [];
+    }
+  });
+
+  // Handler: Save virtual project (create or update)
+  ipcMain.handle('save-virtual-project', async (_event, vp: Omit<VirtualProject, 'id' | 'createdAt' | 'updatedAt'> & { id?: string }) => {
+    try {
+      const virtualProjects = store.get('virtualProjects', []);
+      const now = Date.now();
+
+      let savedProject: VirtualProject;
+
+      if (vp.id) {
+        // Update existing project
+        const index = virtualProjects.findIndex(p => p.id === vp.id);
+        if (index === -1) {
+          throw new Error('Virtual project not found');
+        }
+        savedProject = {
+          ...virtualProjects[index],
+          ...vp,
+          updatedAt: now,
+        };
+        virtualProjects[index] = savedProject;
+      } else {
+        // Create new project
+        savedProject = {
+          ...vp,
+          id: `vp-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+          createdAt: now,
+          updatedAt: now,
+        } as VirtualProject;
+        virtualProjects.push(savedProject);
+      }
+
+      store.set('virtualProjects', virtualProjects);
+      return savedProject;
+    } catch (error) {
+      console.error('Error saving virtual project:', error);
+      throw error;
+    }
+  });
+
+  // Handler: Delete virtual project
+  ipcMain.handle('delete-virtual-project', async (_event, vpId: string) => {
+    try {
+      const virtualProjects = store.get('virtualProjects', []);
+      const updatedProjects = virtualProjects.filter(vp => vp.id !== vpId);
+      store.set('virtualProjects', updatedProjects);
+      return { success: true };
+    } catch (error) {
+      console.error('Error deleting virtual project:', error);
+      throw error;
+    }
+  });
+
+  // Handler: Materialize virtual project (convert to real project)
+  ipcMain.handle('materialize-virtual-project', async (_event, vpId: string, targetDirectory: string, folderName: string) => {
+    try {
+      const virtualProjects = store.get('virtualProjects', []);
+      const vp = virtualProjects.find(p => p.id === vpId);
+
+      if (!vp) {
+        throw new Error('Virtual project not found');
+      }
+
+      // Create project directory
+      const projectPath = path.join(targetDirectory, folderName);
+      await fs.mkdir(projectPath, { recursive: true });
+
+      // Generate wbs.yaml from virtual project metadata
+      const wbsData = {
+        project_info: {
+          name: vp.name,
+          description: vp.description,
+          tech_stack: vp.targetTechStack,
+          problem: vp.problem,
+          solution: vp.solution,
+          target_users: vp.targetUsers,
+        },
+        milestones: [
+          {
+            title: 'v0.1: MVP',
+            due_date: '',
+            status: 'Pending',
+          },
+        ],
+        phases: [
+          {
+            name: 'Phase 1: Setup',
+            tasks: [
+              {
+                id: 'SETUP-001',
+                title: 'Project scaffolding',
+                status: 'Pending',
+                priority: 'P0',
+                spec: 'Initialize project structure and dependencies',
+              },
+            ],
+          },
+        ],
+      };
+
+      const wbsContent = yaml.dump(wbsData, {
+        indent: 2,
+        lineWidth: 120,
+        noRefs: true,
+      });
+
+      const wbsPath = path.join(projectPath, 'wbs.yaml');
+      await fs.writeFile(wbsPath, wbsContent, 'utf-8');
+
+      // Create README.md with project info
+      const readmeContent = `# ${vp.name}
+
+${vp.description}
+
+## Problem
+${vp.problem}
+
+## Solution
+${vp.solution}
+
+## Target Users
+${vp.targetUsers}
+
+## Tech Stack
+${vp.targetTechStack.join(', ')}
+
+${vp.inspiration ? `## Inspiration\n${vp.inspiration}\n` : ''}
+${vp.links.length > 0 ? `## References\n${vp.links.map(l => `- ${l}`).join('\n')}\n` : ''}
+`;
+
+      const readmePath = path.join(projectPath, 'README.md');
+      await fs.writeFile(readmePath, readmeContent, 'utf-8');
+
+      // Delete virtual project from store
+      const updatedProjects = virtualProjects.filter(p => p.id !== vpId);
+      store.set('virtualProjects', updatedProjects);
+
+      return {
+        success: true,
+        projectPath,
+      };
+    } catch (error) {
+      console.error('Error materializing virtual project:', error);
+      throw error;
     }
   });
 }

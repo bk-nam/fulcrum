@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
-import { FolderOpen, RefreshCw, Settings, X, StickyNote } from 'lucide-react';
+import { FolderOpen, RefreshCw, Settings, X, StickyNote, Lightbulb, Plus } from 'lucide-react';
 import ProjectCard from './components/ProjectCard';
+import VirtualProjectCard from './components/VirtualProjectCard';
+import VirtualProjectModal from './components/VirtualProjectModal';
 import SettingsModal from './components/SettingsModal';
 import ProjectDetailModal from './components/ProjectDetailModal';
 import NotesWidget from './components/NotesWidget';
-import type { Project, Settings as SettingsType } from '../shared/types';
+import type { Project, Settings as SettingsType, VirtualProject } from '../shared/types';
 
 interface Toast {
   message: string;
@@ -13,6 +15,7 @@ interface Toast {
 
 function App() {
   const [projects, setProjects] = useState<Project[]>([]);
+  const [virtualProjects, setVirtualProjects] = useState<VirtualProject[]>([]);
   const [rootPath, setRootPath] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -22,6 +25,9 @@ function App() {
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [showDetailModal, setShowDetailModal] = useState<boolean>(false);
   const [showNotesWidget, setShowNotesWidget] = useState<boolean>(false);
+  const [viewFilter, setViewFilter] = useState<'all' | 'real' | 'ideas'>('all');
+  const [selectedVirtualProject, setSelectedVirtualProject] = useState<VirtualProject | null>(null);
+  const [showVirtualProjectModal, setShowVirtualProjectModal] = useState<boolean>(false);
 
   // Load root directory and projects on mount
   useEffect(() => {
@@ -37,7 +43,10 @@ function App() {
       const storedRootPath = await window.electron.getRootDirectory();
       setRootPath(storedRootPath);
 
-      // If root directory exists, load projects
+      // Load virtual projects (always available)
+      await loadVirtualProjects();
+
+      // If root directory exists, load real projects
       if (storedRootPath) {
         await loadProjects();
       }
@@ -60,6 +69,15 @@ function App() {
       setError(err instanceof Error ? err.message : 'Failed to load projects');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadVirtualProjects = async () => {
+    try {
+      const vpList = await window.electron.getVirtualProjects();
+      setVirtualProjects(vpList);
+    } catch (err) {
+      console.error('Error loading virtual projects:', err);
     }
   };
 
@@ -130,6 +148,76 @@ function App() {
     }
   };
 
+  // Virtual Project handlers
+  const handleNewIdea = () => {
+    setSelectedVirtualProject(null);
+    setShowVirtualProjectModal(true);
+  };
+
+  const handleEditVirtualProject = (vp: VirtualProject) => {
+    setSelectedVirtualProject(vp);
+    setShowVirtualProjectModal(true);
+  };
+
+  const handleSaveVirtualProject = async (vp: Omit<VirtualProject, 'id' | 'createdAt' | 'updatedAt'> & { id?: string }) => {
+    try {
+      await window.electron.saveVirtualProject(vp);
+      await loadVirtualProjects();
+      setShowVirtualProjectModal(false);
+      setSelectedVirtualProject(null);
+      showToast(vp.id ? 'Idea updated' : 'Idea created', 'success');
+    } catch (err) {
+      console.error('Error saving virtual project:', err);
+      showToast('Failed to save idea', 'error');
+    }
+  };
+
+  const handleDeleteVirtualProject = async (vpId: string) => {
+    try {
+      await window.electron.deleteVirtualProject(vpId);
+      await loadVirtualProjects();
+      setShowVirtualProjectModal(false);
+      setSelectedVirtualProject(null);
+      showToast('Idea deleted', 'success');
+    } catch (err) {
+      console.error('Error deleting virtual project:', err);
+      showToast('Failed to delete idea', 'error');
+    }
+  };
+
+  const handleConvertVirtualProject = async (vp: VirtualProject) => {
+    try {
+      if (!rootPath) {
+        showToast('Please select a workspace folder first', 'error');
+        return;
+      }
+
+      const folderName = prompt(
+        `Enter folder name for "${vp.name}":`,
+        vp.name.toLowerCase().replace(/\s+/g, '-')
+      );
+
+      if (!folderName) return;
+
+      const result = await window.electron.materializeVirtualProject(vp.id, rootPath, folderName);
+
+      if (result.success) {
+        await loadVirtualProjects();
+        await loadProjects();
+        showToast(`"${vp.name}" converted to real project!`, 'success');
+      }
+    } catch (err) {
+      console.error('Error converting virtual project:', err);
+      showToast('Failed to convert idea to project', 'error');
+    }
+  };
+
+  // Filter logic
+  const filteredProjects = projects;
+  const filteredVirtualProjects = virtualProjects;
+  const displayProjects = viewFilter === 'ideas' ? [] : filteredProjects;
+  const displayVirtualProjects = viewFilter === 'real' ? [] : filteredVirtualProjects;
+
   // Scenario A: Welcome screen (no root directory configured)
   if (!rootPath && !loading) {
     return (
@@ -139,19 +227,58 @@ function App() {
             Welcome to Fulcrum
           </h1>
           <p className="text-gray-600 mb-8 max-w-md">
-            Your personal developer platform. Get started by selecting a workspace folder where you keep your projects.
+            Your personal developer platform. Get started by selecting a workspace folder or capture your ideas first.
           </p>
-          <button
-            onClick={handleSelectDirectory}
-            className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors duration-200 shadow-md hover:shadow-lg"
-          >
-            <FolderOpen className="w-5 h-5" />
-            Select Workspace Folder
-          </button>
+          <div className="flex items-center gap-3 justify-center">
+            <button
+              onClick={handleSelectDirectory}
+              className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors duration-200 shadow-md hover:shadow-lg"
+            >
+              <FolderOpen className="w-5 h-5" />
+              Select Workspace
+            </button>
+            <span className="text-gray-400">or</span>
+            <button
+              onClick={handleNewIdea}
+              className="inline-flex items-center gap-2 bg-amber-600 hover:bg-amber-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors duration-200 shadow-md hover:shadow-lg"
+            >
+              <Lightbulb className="w-5 h-5" />
+              Start with an Idea
+            </button>
+          </div>
           {error && (
             <p className="mt-4 text-red-600 text-sm">{error}</p>
           )}
+
+          {/* Show existing ideas if any */}
+          {virtualProjects.length > 0 && (
+            <div className="mt-12 max-w-4xl mx-auto">
+              <h2 className="text-xl font-semibold text-gray-900 mb-4">Your Ideas</h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {virtualProjects.map((vp) => (
+                  <VirtualProjectCard
+                    key={vp.id}
+                    virtualProject={vp}
+                    onEdit={handleEditVirtualProject}
+                    onConvert={handleConvertVirtualProject}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
         </div>
+
+        {/* Virtual Project Modal (available even without workspace) */}
+        <VirtualProjectModal
+          virtualProject={selectedVirtualProject}
+          isOpen={showVirtualProjectModal}
+          onClose={() => {
+            setShowVirtualProjectModal(false);
+            setSelectedVirtualProject(null);
+          }}
+          onSave={handleSaveVirtualProject}
+          onDelete={handleDeleteVirtualProject}
+        />
       </div>
     );
   }
@@ -225,23 +352,82 @@ function App() {
               Try Again
             </button>
           </div>
-        ) : projects.length === 0 ? (
+        ) : projects.length === 0 && virtualProjects.length === 0 ? (
           <div className="text-center py-12">
             <FolderOpen className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-            <p className="text-gray-600 text-lg">No projects found in this workspace</p>
-            <p className="text-gray-500 text-sm mt-2">
-              Make sure your projects contain marker files like package.json, requirements.txt, or Cargo.toml
+            <p className="text-gray-600 text-lg">No projects or ideas yet</p>
+            <p className="text-gray-500 text-sm mt-2 mb-4">
+              Start by creating an idea or adding projects to your workspace
             </p>
+            <button
+              onClick={handleNewIdea}
+              className="inline-flex items-center gap-2 bg-amber-600 hover:bg-amber-700 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200"
+            >
+              <Lightbulb className="w-4 h-4" />
+              New Idea
+            </button>
           </div>
         ) : (
           <div>
-            <div className="mb-6">
-              <h2 className="text-lg font-semibold text-gray-900">
-                Projects ({projects.length})
-              </h2>
+            {/* Filter Tabs */}
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-2 p-1 rounded-lg border border-slate-300 bg-white">
+                <button
+                  onClick={() => setViewFilter('all')}
+                  className={`px-4 py-2 rounded-md text-sm font-medium transition-all duration-300 ${
+                    viewFilter === 'all'
+                      ? 'bg-indigo-600 text-white shadow-sm'
+                      : 'text-slate-700 hover:bg-slate-100'
+                  }`}
+                >
+                  All <span className="opacity-75">({projects.length + virtualProjects.length})</span>
+                </button>
+                <button
+                  onClick={() => setViewFilter('real')}
+                  className={`px-4 py-2 rounded-md text-sm font-medium transition-all duration-300 ${
+                    viewFilter === 'real'
+                      ? 'bg-indigo-600 text-white shadow-sm'
+                      : 'text-slate-700 hover:bg-slate-100'
+                  }`}
+                >
+                  Projects <span className="opacity-75">({projects.length})</span>
+                </button>
+                <button
+                  onClick={() => setViewFilter('ideas')}
+                  className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-md text-sm font-medium transition-all duration-300 ${
+                    viewFilter === 'ideas'
+                      ? 'bg-indigo-600 text-white shadow-sm'
+                      : 'text-slate-700 hover:bg-slate-100'
+                  }`}
+                >
+                  <Lightbulb className="w-4 h-4" />
+                  Ideas <span className="opacity-75">({virtualProjects.length})</span>
+                </button>
+              </div>
+
+              <button
+                onClick={handleNewIdea}
+                className="inline-flex items-center gap-2 bg-amber-600 hover:bg-amber-700 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200"
+              >
+                <Plus className="w-4 h-4" />
+                New Idea
+              </button>
             </div>
+
+            {/* Grid Display */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-              {projects.map((project) => (
+              {/* Virtual Projects */}
+              {displayVirtualProjects.map((vp) => (
+                <VirtualProjectCard
+                  key={vp.id}
+                  virtualProject={vp}
+                  onEdit={handleEditVirtualProject}
+                  onConvert={handleConvertVirtualProject}
+                />
+              ))}
+
+              {/* Real Projects */}
+              {displayProjects.map((project) => (
                 <ProjectCard
                   key={project.path}
                   project={project}
@@ -275,6 +461,18 @@ function App() {
         onClose={() => setShowNotesWidget(false)}
         selectedProject={selectedProject}
         onOpenProject={handleOpenProjectFromNote}
+      />
+
+      {/* Virtual Project Modal */}
+      <VirtualProjectModal
+        virtualProject={selectedVirtualProject}
+        isOpen={showVirtualProjectModal}
+        onClose={() => {
+          setShowVirtualProjectModal(false);
+          setSelectedVirtualProject(null);
+        }}
+        onSave={handleSaveVirtualProject}
+        onDelete={handleDeleteVirtualProject}
       />
 
       {/* Toast Notification */}
