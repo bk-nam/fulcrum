@@ -1,4 +1,21 @@
 import React from 'react';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+} from '@dnd-kit/core';
+import type { DragEndEvent } from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+  useSortable,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import PhaseSection from './PhaseSection';
 
 interface Task {
@@ -28,6 +45,14 @@ interface GuiEditorProps {
 }
 
 const GuiEditor: React.FC<GuiEditorProps> = ({ parsedWbs, onUpdate }) => {
+  // Setup sensors for drag and drop
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
   // Calculate overall progress
   const calculateProgress = () => {
     if (!parsedWbs.phases || parsedWbs.phases.length === 0) {
@@ -56,6 +81,27 @@ const GuiEditor: React.FC<GuiEditorProps> = ({ parsedWbs, onUpdate }) => {
     const updatedPhases = [...(parsedWbs.phases || [])];
     updatedPhases[phaseIndex] = updatedPhase;
     onUpdate({ ...parsedWbs, phases: updatedPhases });
+  };
+
+  // Handle phase delete
+  const handlePhaseDelete = (phaseIndex: number) => {
+    const updatedPhases = [...(parsedWbs.phases || [])];
+    updatedPhases.splice(phaseIndex, 1);
+    onUpdate({ ...parsedWbs, phases: updatedPhases });
+  };
+
+  // Handle phase drag end
+  const handlePhaseDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+
+    if (!over || active.id === over.id) return;
+
+    const phases = parsedWbs.phases || [];
+    const oldIndex = phases.findIndex(p => p.name === active.id);
+    const newIndex = phases.findIndex(p => p.name === over.id);
+
+    const reorderedPhases = arrayMove(phases, oldIndex, newIndex);
+    onUpdate({ ...parsedWbs, phases: reorderedPhases });
   };
 
   return (
@@ -92,13 +138,26 @@ const GuiEditor: React.FC<GuiEditorProps> = ({ parsedWbs, onUpdate }) => {
       {/* Phases List */}
       <div className="flex-1 overflow-y-auto space-y-4 pr-2">
         {parsedWbs.phases && parsedWbs.phases.length > 0 ? (
-          parsedWbs.phases.map((phase, index) => (
-            <PhaseSection
-              key={`phase-${index}`}
-              phase={phase}
-              onUpdate={(updatedPhase) => handlePhaseUpdate(index, updatedPhase)}
-            />
-          ))
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragEnd={handlePhaseDragEnd}
+          >
+            <SortableContext
+              items={parsedWbs.phases.map((phase) => phase.name)}
+              strategy={verticalListSortingStrategy}
+            >
+              {parsedWbs.phases.map((phase, index) => (
+                <SortablePhaseSection
+                  key={phase.name}
+                  id={phase.name}
+                  phase={phase}
+                  onUpdate={(updatedPhase) => handlePhaseUpdate(index, updatedPhase)}
+                  onDelete={() => handlePhaseDelete(index)}
+                />
+              ))}
+            </SortableContext>
+          </DndContext>
         ) : (
           <div className="flex flex-col items-center justify-center h-full text-gray-500">
             <p className="text-lg font-medium">No phases found</p>
@@ -112,6 +171,48 @@ const GuiEditor: React.FC<GuiEditorProps> = ({ parsedWbs, onUpdate }) => {
         <strong>💡 Tip:</strong> Click on tasks to toggle status, expand for details, or switch to{' '}
         <strong>Code mode</strong> to edit milestones, risks, and other fields.
       </div>
+    </div>
+  );
+};
+
+// Sortable wrapper for PhaseSection
+interface SortablePhaseSectionProps {
+  id: string;
+  phase: Phase;
+  onUpdate: (updatedPhase: Phase) => void;
+  onDelete: () => void;
+}
+
+const SortablePhaseSection: React.FC<SortablePhaseSectionProps> = ({
+  id,
+  phase,
+  onUpdate,
+  onDelete,
+}) => {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition: transition || 'transform 250ms cubic-bezier(0.25, 0.1, 0.25, 1)',
+    opacity: isDragging ? 0.5 : 1,
+    zIndex: isDragging ? 1000 : 0,
+  };
+
+  return (
+    <div ref={setNodeRef} style={style}>
+      <PhaseSection
+        phase={phase}
+        onUpdate={onUpdate}
+        onDelete={onDelete}
+        dragHandleProps={{ ...attributes, ...listeners }}
+      />
     </div>
   );
 };

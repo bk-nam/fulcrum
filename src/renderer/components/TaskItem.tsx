@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Circle, Clock, CheckCircle, ChevronDown, ChevronRight } from 'lucide-react';
+import { Circle, Clock, CheckCircle, ChevronDown, ChevronRight, Trash2, GripVertical } from 'lucide-react';
 
 interface Task {
   id: string;
@@ -13,9 +13,11 @@ interface Task {
 interface TaskItemProps {
   task: Task;
   onUpdate: (updatedTask: Task) => void;
+  onDelete: () => void;
+  dragHandleProps?: any;
 }
 
-const TaskItem: React.FC<TaskItemProps> = ({ task, onUpdate }) => {
+const TaskItem: React.FC<TaskItemProps> = ({ task, onUpdate, onDelete, dragHandleProps }) => {
   const [isExpanded, setIsExpanded] = useState(false);
 
   // Status toggle logic
@@ -25,6 +27,14 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, onUpdate }) => {
     const currentIndex = statusCycle.indexOf(task.status);
     const nextStatus = statusCycle[(currentIndex + 1) % statusCycle.length];
     onUpdate({ ...task, status: nextStatus });
+  };
+
+  // Delete task with confirmation
+  const handleDelete = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (window.confirm(`Delete task "[${task.id}] ${task.title}"?`)) {
+      onDelete();
+    }
   };
 
   // Status icon and color
@@ -68,6 +78,18 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, onUpdate }) => {
     <div className="border border-slate-200 rounded-lg p-4 hover:border-slate-300 hover:shadow-sm transition-all duration-300 bg-white cursor-pointer">
       {/* Task Header */}
       <div className="flex items-center gap-3" onClick={() => setIsExpanded(!isExpanded)}>
+        {/* Drag Handle */}
+        {dragHandleProps && (
+          <button
+            {...dragHandleProps}
+            className="cursor-grab active:cursor-grabbing p-1.5 text-gray-400 hover:text-gray-600 transition-colors"
+            title="Drag to reorder task"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <GripVertical className="w-4 h-4" />
+          </button>
+        )}
+
         {/* Status Toggle Button */}
         <button
           onClick={handleStatusToggle}
@@ -92,6 +114,15 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, onUpdate }) => {
         <span className={`px-3 py-1 rounded-full text-xs font-bold ${getPriorityColor()} flex-shrink-0 shadow-md`}>
           {task.priority}
         </span>
+
+        {/* Delete Button */}
+        <button
+          onClick={handleDelete}
+          className="p-1.5 rounded-lg border border-gray-300 bg-white text-gray-400 hover:text-red-500 hover:bg-red-50 hover:border-red-300 transition-all duration-300 flex-shrink-0"
+          title="Delete task"
+        >
+          <Trash2 className="w-4 h-4" />
+        </button>
 
         {/* Expand/Collapse Button */}
         <button

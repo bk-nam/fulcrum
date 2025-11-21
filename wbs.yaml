@@ -1,8 +1,6 @@
 project_info:
   name: Fulcrum
-  description: >-
-    Personal Developer Platform (PDP) to manage lifecycle, context, and assets
-    of multiple side-projects.
+  description: Personal Developer Platform (PDP) to manage lifecycle, context, and assets of multiple side-projects.
   period: 2025-11-20 ~ 2026-03-31
   owner: Maker & Gemini
   tech_stack:
@@ -46,47 +44,33 @@ phases:
         title: Local Scanner System
         status: Done
         priority: P0
-        spec: >-
-          Recursive directory scanning. Project type detection
-          (Node/Python/Rust).
+        spec: Recursive directory scanning. Project type detection (Node/Python/Rust).
   - name: 'Phase 2: Ignition (Launcher)'
     tasks:
       - id: LNC-001
         title: Context Restoration Launcher
         status: Done
         priority: P0
-        spec: >-
-          Simultaneous launch of Editor (Antigravity) & Terminal. Settings UI
-          for custom paths.
+        spec: Simultaneous launch of Editor (Antigravity) & Terminal. Settings UI for custom paths.
   - name: 'Phase 3: Command Center (WBS)'
     tasks:
       - id: WBS-001
         title: Structured YAML Editor
         status: Done
         priority: P0
-        spec: >-
-          Project Detail Modal. Read/Write `wbs.yaml`. 'Copy Context for AI'
-          feature. Debounced auto-save.
+        spec: Project Detail Modal. Read/Write `wbs.yaml`. 'Copy Context for AI' feature. Debounced auto-save.
       - id: WBS-002
         title: Interactive WBS GUI
         priority: P0
         status: Done
         period: '2025-11-20'
-        spec: >
+        spec: |
           Implement a Dual-Mode editor (Text/Visual).
-
           Parse YAML to UI components (Phases as Accordions, Tasks as Cards).
-
           Allow direct manipulation of Status, Priority, and Specs via UI.
-
           Auto-sync UI changes back to YAML string.
-
-          ✅ Completed: GUI editor with phase accordions, task cards, status
-          toggle, priority selector.
-
-          ✅ Design refinement: Professional indigo/slate color scheme, removed
-          gradients and glow effects.
-
+          ✅ Completed: GUI editor with phase accordions, task cards, status toggle, priority selector.
+          ✅ Design refinement: Professional indigo/slate color scheme, removed gradients and glow effects.
           ✅ Language icons: Added react-icons for Node.js, Python, Rust logos.
   - name: 'Phase 4: Intelligence (Dashboard)'
     tasks:
@@ -95,9 +79,7 @@ phases:
         status: Done
         priority: P1
         period: '2025-11-20'
-        spec: >-
-          Parsed `wbs.yaml` metadata. Displayed Tech Stack badges and Phase
-          info.
+        spec: Parsed `wbs.yaml` metadata. Displayed Tech Stack badges and Phase info.
   - name: 'Phase 5: Lifecycle Management (Zombie Killer)'
     tasks:
       - id: LIFE-001
@@ -105,17 +87,7 @@ phases:
         status: Done
         priority: P2
         period: '2025-11-20'
-        spec: >-
-          Implemented logic to visualize relative time and color-code project
-          health (Fresh/Stale/Zombie).
-      - id: LIFE-002
-        title: Search & Filter System
-        status: Ready
-        priority: P1
-        spec: |
-          Real-time search by project name.
-          Sort by: Name (A-Z), Freshness (Newest/Oldest).
-          Filter by: Status (Active/Zombie), Tech Stack.
+        spec: Implemented logic to visualize relative time and color-code project health (Fresh/Stale/Zombie).
       - id: LIFE-003
         title: Last Touched Heatmap
         status: Done
@@ -128,36 +100,10 @@ phases:
         status: Done
         priority: P2
         period: '2025-11-21'
-        spec: >
+        spec: |
           Manual tagging: Active, Maintenance, Archive, Idea.
-
           Filter/Sort dashboard by these tags.
-
-          ✅ Completed: Status badge/selector, electron-store + wbs.yaml sync,
-          filter UI, status-based sorting
-      - id: LIFE-005
-        title: Tech Stack Indexer
-        status: Pending
-        priority: P3
-        spec: |
-          Deep scan `package.json` / `requirements.txt`.
-          Create a search index to answer "Where did I use 'framer-motion'?"
-  - name: 'Phase 6: The Factory (Scaffolding)'
-    tasks:
-      - id: SCAF-001
-        title: One-Click Boilerplate
-        status: Pending
-        priority: P3
-        spec: |
-          UI to select templates (Next.js, Python/FastAPI).
-          Execute system commands to clone/init projects.
-      - id: SCAF-002
-        title: Port Manager
-        status: Pending
-        priority: P2
-        spec: |
-          Registry of used local ports (3000, 8000, etc.).
-          Auto-assign next available port or warn on conflict.
+          ✅ Completed: Status badge/selector, electron-store + wbs.yaml sync, filter UI, status-based sorting
   - name: 'Phase 7: Deep Context'
     tasks:
       - id: CTX-001
@@ -193,6 +139,22 @@ phases:
         spec: |
           List active PIDs related to project paths.
           "Kill All" button to force stop zombie servers.
+  - name: 'Phase 6: The Factory (Scaffolding)'
+    tasks:
+      - id: SCAF-002
+        title: Port Manager
+        status: Pending
+        priority: P2
+        spec: |
+          Registry of used local ports (3000, 8000, etc.).
+          Auto-assign next available port or warn on conflict.
+      - id: SCAF-001
+        title: One-Click Boilerplate
+        status: Pending
+        priority: P3
+        spec: |
+          UI to select templates (Next.js, Python/FastAPI).
+          Execute system commands to clone/init projects.
 risks:
   - severity: High
     description: Performance scaling with Deep Search (Phase 5)
