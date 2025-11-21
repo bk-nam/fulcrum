@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ChevronDown, ChevronRight, Trash2, Plus, X, GripVertical } from 'lucide-react';
+import { ChevronDown, ChevronRight, Trash2, Plus, X, GripVertical, Pin } from 'lucide-react';
 import {
   DndContext,
   closestCenter,
@@ -38,9 +38,11 @@ interface PhaseSectionProps {
   onUpdate: (updatedPhase: Phase) => void;
   onDelete: () => void;
   dragHandleProps?: any;
+  isPinned?: boolean;
+  onPin?: () => void;
 }
 
-const PhaseSection: React.FC<PhaseSectionProps> = ({ phase, onUpdate, onDelete, dragHandleProps }) => {
+const PhaseSection: React.FC<PhaseSectionProps> = ({ phase, onUpdate, onDelete, dragHandleProps, isPinned, onPin }) => {
   // Calculate task completion
   const totalTasks = phase.tasks?.length || 0;
   const completedTasks = phase.tasks?.filter((task) => task.status === 'Done').length || 0;
@@ -155,6 +157,24 @@ const PhaseSection: React.FC<PhaseSectionProps> = ({ phase, onUpdate, onDelete, 
 
           {/* Phase Name */}
           <h3 className="text-lg font-semibold text-white">{phase.name}</h3>
+
+          {/* Pin Button */}
+          {onPin && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onPin();
+              }}
+              className={`ml-3 p-1.5 rounded-lg border transition-all duration-300 ${
+                isPinned
+                  ? 'bg-indigo-600 border-indigo-500 text-white hover:bg-indigo-700'
+                  : 'bg-slate-600 border-slate-500 text-slate-300 hover:bg-slate-500 hover:text-white'
+              }`}
+              title={isPinned ? 'Unpin from Current Focus' : 'Pin to Current Focus'}
+            >
+              <Pin className={`w-4 h-4 ${isPinned ? 'fill-current' : ''}`} />
+            </button>
+          )}
 
           {/* Delete Phase Button */}
           <button

@@ -87,5 +87,29 @@ electron.contextBridge.exposeInMainWorld("electron", {
   },
   findProcessByPort: (port) => {
     return electron.ipcRenderer.invoke("find-process-by-port", port);
+  },
+  // Current Focus Phase operations
+  getCurrentFocusPhase: (projectPath) => {
+    return electron.ipcRenderer.invoke("get-current-focus-phase", projectPath);
+  },
+  setCurrentFocusPhase: (projectPath, phaseName) => {
+    return electron.ipcRenderer.invoke("set-current-focus-phase", projectPath, phaseName);
+  },
+  // Activity Tracking operations (Phase 10: TIME-003)
+  getProjectActivity: (projectPath) => {
+    return electron.ipcRenderer.invoke("get-project-activity", projectPath);
+  },
+  getAllActivities: () => {
+    return electron.ipcRenderer.invoke("get-all-activities");
+  },
+  // Time Tracking operations (Phase 10: TIME-002)
+  endTimeSession: (projectPath) => {
+    return electron.ipcRenderer.invoke("end-time-session", projectPath);
+  },
+  getProjectTimeStats: (projectPath) => {
+    return electron.ipcRenderer.invoke("get-project-time-stats", projectPath);
+  },
+  getTimeTrackingSummary: () => {
+    return electron.ipcRenderer.invoke("get-time-tracking-summary");
   }
 });

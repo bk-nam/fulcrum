@@ -1,5 +1,5 @@
 import { contextBridge, ipcRenderer } from 'electron';
-import type { Project, Settings, QuickNote, EnvVariable, VirtualProject, ProjectStatus, ProcessInfo, ProcessKillResult } from '../shared/types.js';
+import type { Project, Settings, QuickNote, EnvVariable, VirtualProject, ProjectStatus, ProcessInfo, ProcessKillResult, ProjectActivity, WorkSession, ProjectTimeStats, TimeTrackingSummary } from '../shared/types.js';
 
 // Expose protected methods that allow the renderer process to use
 // the ipcRenderer without exposing the entire object
@@ -115,6 +115,37 @@ contextBridge.exposeInMainWorld('electron', {
   findProcessByPort: (port: number): Promise<ProcessInfo[]> => {
     return ipcRenderer.invoke('find-process-by-port', port);
   },
+
+  // Current Focus Phase operations
+  getCurrentFocusPhase: (projectPath: string): Promise<string | null> => {
+    return ipcRenderer.invoke('get-current-focus-phase', projectPath);
+  },
+
+  setCurrentFocusPhase: (projectPath: string, phaseName: string | null): Promise<{ success: boolean }> => {
+    return ipcRenderer.invoke('set-current-focus-phase', projectPath, phaseName);
+  },
+
+  // Activity Tracking operations (Phase 10: TIME-003)
+  getProjectActivity: (projectPath: string): Promise<ProjectActivity | null> => {
+    return ipcRenderer.invoke('get-project-activity', projectPath);
+  },
+
+  getAllActivities: (): Promise<Record<string, ProjectActivity>> => {
+    return ipcRenderer.invoke('get-all-activities');
+  },
+
+  // Time Tracking operations (Phase 10: TIME-002)
+  endTimeSession: (projectPath: string): Promise<WorkSession | null> => {
+    return ipcRenderer.invoke('end-time-session', projectPath);
+  },
+
+  getProjectTimeStats: (projectPath: string): Promise<ProjectTimeStats | null> => {
+    return ipcRenderer.invoke('get-project-time-stats', projectPath);
+  },
+
+  getTimeTrackingSummary: (): Promise<TimeTrackingSummary> => {
+    return ipcRenderer.invoke('get-time-tracking-summary');
+  },
 });
 
 // Type definitions for TypeScript
@@ -144,6 +175,13 @@ export interface ElectronAPI {
   killProcess: (pid: number, force?: boolean) => Promise<ProcessKillResult>;
   killProjectProcesses: (projectPath: string) => Promise<ProcessKillResult[]>;
   findProcessByPort: (port: number) => Promise<ProcessInfo[]>;
+  getCurrentFocusPhase: (projectPath: string) => Promise<string | null>;
+  setCurrentFocusPhase: (projectPath: string, phaseName: string | null) => Promise<{ success: boolean }>;
+  getProjectActivity: (projectPath: string) => Promise<ProjectActivity | null>;
+  getAllActivities: () => Promise<Record<string, ProjectActivity>>;
+  endTimeSession: (projectPath: string) => Promise<WorkSession | null>;
+  getProjectTimeStats: (projectPath: string) => Promise<ProjectTimeStats | null>;
+  getTimeTrackingSummary: () => Promise<TimeTrackingSummary>;
 }
 
 declare global {

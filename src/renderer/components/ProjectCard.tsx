@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
-import { Rocket, Milestone, Folder } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Rocket, Milestone, Folder, Clock } from 'lucide-react';
 import { SiNodedotjs, SiPython, SiRust } from 'react-icons/si';
-import type { Project } from '../../shared/types';
+import type { Project, ProjectActivity } from '../../shared/types';
 import { getRelativeTime, getProjectHealth, getHealthColor } from '../../shared/utils';
 import { StatusBadge } from './StatusBadge';
 
@@ -13,6 +13,21 @@ interface ProjectCardProps {
 
 const ProjectCard: React.FC<ProjectCardProps> = ({ project, onLaunch, onClick }) => {
   const [isLaunching, setIsLaunching] = useState(false);
+  const [activity, setActivity] = useState<ProjectActivity | null>(null);
+
+  // Load activity for this project (Phase 10: TIME-003)
+  useEffect(() => {
+    const loadActivity = async () => {
+      try {
+        const projectActivity = await window.electron.getProjectActivity(project.path);
+        setActivity(projectActivity);
+      } catch (error) {
+        console.error('Error loading project activity:', error);
+      }
+    };
+
+    loadActivity();
+  }, [project.path]);
 
   // Calculate project health and freshness
   const health = getProjectHealth(project.lastModified);
@@ -131,6 +146,23 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onLaunch, onClick })
             <span className="truncate font-medium text-slate-700">
               {project.meta.currentPhase}
             </span>
+          </div>
+        </div>
+      )}
+
+      {/* Last Activity (Phase 10: TIME-003) */}
+      {activity?.lastActivity && (
+        <div className="mt-3 pt-3 border-t border-slate-200">
+          <div className="flex items-start gap-2 text-xs">
+            <Clock className="w-3.5 h-3.5 text-slate-500 mt-0.5 flex-shrink-0" />
+            <div className="flex-1 min-w-0">
+              <div className="text-slate-600 truncate">
+                {activity.lastActivity.description}
+              </div>
+              <div className="text-slate-400 mt-0.5">
+                {getRelativeTime(activity.lastActivity.timestamp)}
+              </div>
+            </div>
           </div>
         </div>
       )}

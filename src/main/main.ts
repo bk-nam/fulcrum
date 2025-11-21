@@ -6,9 +6,11 @@ import { spawn, exec } from 'child_process';
 import { promisify } from 'util';
 import Store from 'electron-store';
 import * as yaml from 'js-yaml';
-import type { Project, Settings, QuickNote, EnvVariable, VirtualProject, ProjectStatus } from '../shared/types.js';
+import type { Project, Settings, QuickNote, EnvVariable, VirtualProject, ProjectStatus, ProjectActivity, ActivityEvent, ActivityType } from '../shared/types.js';
 import { WBS_TEMPLATE } from '../shared/constants.js';
 import { ProcessRegistry, killProcess, findProcessByPort, findTerminalProcess, scanProjectProcesses } from './processManager.js';
+import { isGitRepository, getRecentCommits, getChangedFilesSince } from './gitIntegration.js';
+import { startSession, endSession, endAllSessions, getProjectTimeStats, getTimeTrackingSummary } from './timeTracking.js';
 
 const execAsync = promisify(exec);
 
@@ -23,6 +25,8 @@ interface StoreSchema {
   quickNotes?: QuickNote[];
   virtualProjects?: VirtualProject[];
   projectStatuses?: Record<string, ProjectStatus>;
+  currentFocusPhases?: Record<string, string>; // projectPath -> phaseName
+  projectActivities?: Record<string, ProjectActivity>; // projectPath -> ProjectActivity (Phase 10)
 }
 
 const store = new Store<StoreSchema>({
@@ -48,6 +52,108 @@ function getSettings(): Settings {
     return DEFAULT_SETTINGS;
   }
   return settings;
+}
+
+/**
+ * Activity Tracker (Phase 10: TIME-003 - Smart Resume)
+ */
+
+/**
+ * Record a new activity event for a project
+ */
+function recordActivity(
+  projectPath: string,
+  projectName: string,
+  type: ActivityType,
+  description: string,
+  metadata?: Record<string, any>
+): void {
+  try {
+    const activities = store.get('projectActivities', {});
+
+    const event: ActivityEvent = {
+      type,
+      timestamp: Date.now(),
+      description,
+      metadata,
+    };
+
+    const existing = activities[projectPath];
+    const recentActivities = existing?.recentActivities || [];
+
+    // Add new event and keep last 10
+    const updatedRecent = [event, ...recentActivities].slice(0, 10);
+
+    activities[projectPath] = {
+      projectPath,
+      projectName,
+      lastActivity: event,
+      recentActivities: updatedRecent,
+      // Git fields will be populated by TIME-001
+      recentCommits: existing?.recentCommits,
+      changedFiles: existing?.changedFiles,
+    };
+
+    store.set('projectActivities', activities);
+  } catch (error) {
+    console.error('Error recording activity:', error);
+  }
+}
+
+/**
+ * Get activity for a specific project
+ */
+function getProjectActivity(projectPath: string): ProjectActivity | null {
+  try {
+    const activities = store.get('projectActivities', {});
+    return activities[projectPath] || null;
+  } catch (error) {
+    console.error('Error getting project activity:', error);
+    return null;
+  }
+}
+
+/**
+ * Get all project activities
+ */
+function getAllActivities(): Record<string, ProjectActivity> {
+  try {
+    return store.get('projectActivities', {});
+  } catch (error) {
+    console.error('Error getting all activities:', error);
+    return {};
+  }
+}
+
+/**
+ * Enrich project activity with Git data (Phase 10: TIME-001)
+ */
+async function enrichActivityWithGit(
+  projectPath: string,
+  activity: ProjectActivity
+): Promise<ProjectActivity> {
+  try {
+    // Check if project is a Git repository
+    if (!(await isGitRepository(projectPath))) {
+      return activity;
+    }
+
+    // Get recent commits (last 24 hours)
+    const recentCommits = await getRecentCommits(projectPath, 24);
+
+    // Get changed files since last activity
+    const lastActivityTime = activity.lastActivity?.timestamp || Date.now() - 24 * 60 * 60 * 1000;
+    const changedFiles = await getChangedFilesSince(projectPath, lastActivityTime);
+
+    return {
+      ...activity,
+      recentCommits: recentCommits.slice(0, 5), // Keep last 5 commits
+      changedFiles: changedFiles.slice(0, 10), // Keep top 10 changed files
+    };
+  } catch (error) {
+    console.error('Error enriching activity with Git data:', error);
+    return activity;
+  }
 }
 
 /**
@@ -525,7 +631,18 @@ function setupIpcHandlers(): void {
   // Handler: Launch project
   ipcMain.handle('launch-project', async (_event, projectPath: string) => {
     try {
-      return await launchProject(projectPath);
+      const result = await launchProject(projectPath);
+
+      // Record activity (Phase 10: TIME-003)
+      if (result.success) {
+        const projectName = path.basename(projectPath);
+        recordActivity(projectPath, projectName, 'launch', 'Opened project in editor and terminal');
+
+        // Start time tracking session (Phase 10: TIME-002)
+        startSession(projectPath, projectName);
+      }
+
+      return result;
     } catch (error) {
       console.error('Error launching project:', error);
       return {
@@ -570,6 +687,11 @@ function setupIpcHandlers(): void {
   ipcMain.handle('save-wbs', async (_event, projectPath: string, content: string) => {
     try {
       await saveWbs(projectPath, content);
+
+      // Record activity (Phase 10: TIME-003)
+      const projectName = path.basename(projectPath);
+      recordActivity(projectPath, projectName, 'wbs-edit', 'Updated WBS structure');
+
       return { success: true };
     } catch (error) {
       console.error('Error saving WBS:', error);
@@ -605,6 +727,13 @@ function setupIpcHandlers(): void {
       // Add new note and keep only most recent 100
       const updatedNotes = [newNote, ...notes].slice(0, 100);
       store.set('quickNotes', updatedNotes);
+
+      // Record activity (Phase 10: TIME-003)
+      if (note.projectPath) {
+        const projectName = path.basename(note.projectPath);
+        const notePreview = note.note.length > 50 ? note.note.substring(0, 50) + '...' : note.note;
+        recordActivity(note.projectPath, projectName, 'quick-note', `Added note: "${notePreview}"`);
+      }
 
       return newNote;
     } catch (error) {
@@ -668,6 +797,11 @@ function setupIpcHandlers(): void {
       } catch (yamlError) {
         // wbs.yaml doesn't exist or error, ignore (electron-store only)
       }
+
+      // Record activity (Phase 10: TIME-003)
+      const projectName = path.basename(projectPath);
+      const statusText = status ? `Changed status to: ${status}` : 'Cleared status';
+      recordActivity(projectPath, projectName, 'status-change', statusText);
 
       return { success: true };
     } catch (error) {
@@ -983,6 +1117,109 @@ ${vp.links.length > 0 ? `## References\n${vp.links.map(l => `- ${l}`).join('\n')
       throw error;
     }
   });
+
+  // ========================================
+  // Current Focus Phase Handlers
+  // ========================================
+
+  // Handler: Get current focus phase for a project
+  ipcMain.handle('get-current-focus-phase', async (_event, projectPath: string) => {
+    try {
+      const focusPhases = store.get('currentFocusPhases', {});
+      return focusPhases[projectPath] || null;
+    } catch (error) {
+      console.error('Error getting current focus phase:', error);
+      return null;
+    }
+  });
+
+  // Handler: Set current focus phase for a project
+  ipcMain.handle('set-current-focus-phase', async (_event, projectPath: string, phaseName: string | null) => {
+    try {
+      const focusPhases = store.get('currentFocusPhases', {});
+      if (phaseName === null) {
+        delete focusPhases[projectPath];
+      } else {
+        focusPhases[projectPath] = phaseName;
+      }
+      store.set('currentFocusPhases', focusPhases);
+      return { success: true };
+    } catch (error) {
+      console.error('Error setting current focus phase:', error);
+      throw error;
+    }
+  });
+
+  // ========================================
+  // Activity Tracking Handlers (Phase 10: TIME-003)
+  // ========================================
+
+  // Handler: Get activity for a specific project
+  ipcMain.handle('get-project-activity', async (_event, projectPath: string) => {
+    try {
+      let activity = getProjectActivity(projectPath);
+
+      // Enrich with Git data if activity exists (Phase 10: TIME-001)
+      if (activity) {
+        activity = await enrichActivityWithGit(projectPath, activity);
+      }
+
+      return activity;
+    } catch (error) {
+      console.error('Error getting project activity:', error);
+      return null;
+    }
+  });
+
+  // Handler: Get all project activities
+  ipcMain.handle('get-all-activities', async () => {
+    try {
+      return getAllActivities();
+    } catch (error) {
+      console.error('Error getting all activities:', error);
+      return {};
+    }
+  });
+
+  // ========================================
+  // Time Tracking Handlers (Phase 10: TIME-002)
+  // ========================================
+
+  // Handler: End time tracking session for a project
+  ipcMain.handle('end-time-session', async (_event, projectPath: string) => {
+    try {
+      return endSession(projectPath);
+    } catch (error) {
+      console.error('Error ending time session:', error);
+      return null;
+    }
+  });
+
+  // Handler: Get time stats for a specific project
+  ipcMain.handle('get-project-time-stats', async (_event, projectPath: string) => {
+    try {
+      return getProjectTimeStats(projectPath);
+    } catch (error) {
+      console.error('Error getting project time stats:', error);
+      return null;
+    }
+  });
+
+  // Handler: Get overall time tracking summary
+  ipcMain.handle('get-time-tracking-summary', async () => {
+    try {
+      return getTimeTrackingSummary();
+    } catch (error) {
+      console.error('Error getting time tracking summary:', error);
+      return {
+        totalProjects: 0,
+        totalTime: 0,
+        weeklyTime: 0,
+        todayTime: 0,
+        topProjects: [],
+      };
+    }
+  });
 }
 
 const createWindow = (): void => {
@@ -1036,4 +1273,9 @@ app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
     app.quit();
   }
+});
+
+// End all active time tracking sessions before quitting (Phase 10: TIME-002)
+app.on('before-quit', () => {
+  endAllSessions();
 });

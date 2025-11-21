@@ -1,8 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, Rocket, Copy, CheckCircle, Layout, Code, KeyRound, Eye, EyeOff, Activity } from 'lucide-react';
+import { X, Rocket, Copy, CheckCircle, Layout, Code, KeyRound, Eye, EyeOff, Activity, Clock } from 'lucide-react';
 import * as yaml from 'js-yaml';
-import type { Project, EnvVariable, ProjectStatus } from '../../shared/types';
+import type { Project, EnvVariable, ProjectStatus, ProjectActivity, ProjectTimeStats } from '../../shared/types';
 import { AI_CONTEXT_PROMPT_TEMPLATE } from '../../shared/constants';
+import { getRelativeTime } from '../../shared/utils';
+import { formatDuration } from '../utils/timeFormat';
 import GuiEditor from './GuiEditor';
 import { StatusSelector } from './StatusSelector';
 import { ProcessManager } from './ProcessManager';
@@ -41,6 +43,12 @@ const ProjectDetailModal: React.FC<ProjectDetailModalProps> = ({
   // Status management - local state for immediate UI update
   const [currentStatus, setCurrentStatus] = useState<ProjectStatus | undefined>(project?.status);
 
+  // Activity tracking (Phase 10: TIME-003)
+  const [activity, setActivity] = useState<ProjectActivity | null>(null);
+
+  // Time tracking (Phase 10: TIME-002)
+  const [timeStats, setTimeStats] = useState<ProjectTimeStats | null>(null);
+
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const initialContentRef = useRef<string>('');
 
@@ -49,6 +57,8 @@ const ProjectDetailModal: React.FC<ProjectDetailModalProps> = ({
     if (isOpen && project) {
       loadWbsContent();
       setCurrentStatus(project.status); // Initialize status
+      loadActivity(); // Load activity (Phase 10: TIME-003)
+      loadTimeStats(); // Load time stats (Phase 10: TIME-002)
     }
   }, [isOpen, project]);
 
@@ -96,6 +106,28 @@ const ProjectDetailModal: React.FC<ProjectDetailModalProps> = ({
       console.error('Error loading WBS:', error);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const loadActivity = async () => {
+    if (!project) return;
+
+    try {
+      const projectActivity = await window.electron.getProjectActivity(project.path);
+      setActivity(projectActivity);
+    } catch (error) {
+      console.error('Error loading project activity:', error);
+    }
+  };
+
+  const loadTimeStats = async () => {
+    if (!project) return;
+
+    try {
+      const stats = await window.electron.getProjectTimeStats(project.path);
+      setTimeStats(stats);
+    } catch (error) {
+      console.error('Error loading time stats:', error);
     }
   };
 
@@ -366,6 +398,105 @@ const ProjectDetailModal: React.FC<ProjectDetailModalProps> = ({
           </div>
         </div>
 
+        {/* Resume Context Banner (Phase 10: TIME-003 + TIME-001) */}
+        {activity?.lastActivity && (
+          <div className="px-6 py-3 bg-gradient-to-r from-indigo-50 to-purple-50 border-b border-indigo-100">
+            <div className="flex items-start gap-3">
+              <div className="flex-shrink-0">
+                <div className="p-2 bg-white rounded-lg shadow-sm">
+                  <Clock className="w-4 h-4 text-indigo-600" />
+                </div>
+              </div>
+              <div className="flex-1 min-w-0 space-y-2">
+                {/* Last Activity */}
+                <div>
+                  <div className="text-sm font-medium text-slate-900">
+                    {activity.lastActivity.description}
+                  </div>
+                  <div className="text-xs text-slate-600 mt-0.5">
+                    {getRelativeTime(activity.lastActivity.timestamp)}
+                  </div>
+                </div>
+
+                {/* Git Commits (Phase 10: TIME-001) */}
+                {activity.recentCommits && activity.recentCommits.length > 0 && (
+                  <div className="pt-2 border-t border-indigo-100">
+                    <div className="text-xs font-medium text-slate-700 mb-1.5">
+                      Recent Commits ({activity.recentCommits.length})
+                    </div>
+                    <div className="space-y-1">
+                      {activity.recentCommits.slice(0, 3).map((commit) => (
+                        <div key={commit.hash} className="flex items-start gap-2 text-xs">
+                          <code className="text-indigo-600 font-mono flex-shrink-0">
+                            {commit.hash}
+                          </code>
+                          <span className="text-slate-600 truncate flex-1">
+                            {commit.message}
+                          </span>
+                          <span className="text-slate-400 flex-shrink-0">
+                            {getRelativeTime(commit.timestamp)}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Changed Files (Phase 10: TIME-001) */}
+                {activity.changedFiles && activity.changedFiles.length > 0 && (
+                  <div className="pt-2 border-t border-indigo-100">
+                    <div className="text-xs font-medium text-slate-700 mb-1">
+                      Changed Files ({activity.changedFiles.length})
+                    </div>
+                    <div className="flex flex-wrap gap-1">
+                      {activity.changedFiles.slice(0, 5).map((file, idx) => (
+                        <span
+                          key={idx}
+                          className="inline-flex items-center px-2 py-0.5 rounded text-xs bg-white text-slate-600 border border-slate-200"
+                        >
+                          {file.split('/').pop()}
+                        </span>
+                      ))}
+                      {activity.changedFiles.length > 5 && (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs bg-white text-slate-500">
+                          +{activity.changedFiles.length - 5} more
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Time Stats (Phase 10: TIME-002) */}
+                {timeStats && timeStats.totalTime > 0 && (
+                  <div className="pt-2 border-t border-indigo-100">
+                    <div className="flex items-center gap-4 text-xs">
+                      <div>
+                        <span className="font-medium text-slate-700">Total: </span>
+                        <span className="text-indigo-600 font-semibold">{formatDuration(timeStats.totalTime)}</span>
+                      </div>
+                      <div>
+                        <span className="font-medium text-slate-700">This Week: </span>
+                        <span className="text-purple-600 font-semibold">{formatDuration(timeStats.weeklyTime)}</span>
+                      </div>
+                      <div>
+                        <span className="font-medium text-slate-700">Sessions: </span>
+                        <span className="text-slate-600">{timeStats.sessionCount}</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+              {activity.recentActivities.length > 1 && (
+                <div className="flex-shrink-0">
+                  <div className="text-xs text-slate-500 bg-white px-2 py-1 rounded-md shadow-sm">
+                    +{activity.recentActivities.length - 1} more activities
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Editor Area */}
         <div className="flex-1 flex flex-col p-6 overflow-hidden">
           {isLoading ? (
@@ -415,7 +546,7 @@ const ProjectDetailModal: React.FC<ProjectDetailModalProps> = ({
               {/* Editor: GUI, Code, or Env */}
               <div className="flex-1 overflow-hidden">
                 {viewMode === 'gui' && parsedWbs ? (
-                  <GuiEditor parsedWbs={parsedWbs} onUpdate={handleGuiUpdate} />
+                  <GuiEditor parsedWbs={parsedWbs} onUpdate={handleGuiUpdate} projectPath={project.path} />
                 ) : viewMode === 'code' ? (
                   <textarea
                     value={wbsContent}

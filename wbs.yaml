@@ -13,25 +13,6 @@ project_info:
     - electron-store
     - react-icons
   status: active
-milestones:
-  - title: 'v0.1: Foundation (Scanner & Launcher)'
-    due_date: '2025-11-20'
-    status: Done
-  - title: 'v0.2: Command Center (WBS Editor)'
-    due_date: '2025-11-20'
-    status: Done
-  - title: 'v0.3: Intelligence (Dashboard & Metadata)'
-    due_date: '2025-11-22'
-    status: Pending
-  - title: 'v0.5: Lifecycle Management (Zombie Killer)'
-    due_date: '2025-12-01'
-    status: Pending
-  - title: 'v0.8: The Factory (Scaffolding)'
-    due_date: '2025-12-15'
-    status: Pending
-  - title: 'v1.0: Full Context & Monitoring'
-    due_date: '2026-01-30'
-    status: Pending
 phases:
   - name: 'Phase 1: Genesis (Core Engine)'
     tasks:
@@ -137,16 +118,187 @@ phases:
         status: Done
         priority: P3
         period: '2025-11-21'
-        spec: |
+        spec: >
           List active PIDs related to project paths.
+
           "Kill All" button to force stop zombie servers.
+
           ✅ Completed: Process tracking for Editor + Terminal (best-effort on Terminal)
+
           ✅ ProcessRegistry with electron-store persistence
-          ✅ IPC handlers: get-project-processes, get-all-processes, kill-process, kill-project-processes, find-process-by-port
+
+          ✅ IPC handlers: get-project-processes, get-all-processes, kill-process, kill-project-processes,
+          find-process-by-port
+
           ✅ Dual UI: "Processes" tab in ProjectDetailModal + GlobalProcessModal
+
           ✅ Real-time process monitoring with 5-second polling
+
           ✅ Port-based process detection (Enhanced feature)
+
           ✅ Cross-platform support (macOS/Windows/Linux)
+  - name: 'Phase 10: Time-Travel Context'
+    tasks:
+      - id: TIME-001
+        title: Auto-Context Capture
+        status: Pending
+        priority: P1
+        spec: |
+          Automatic context recording to eliminate "what was I doing?" friction.
+          - Git commit analysis for "What did I do today?"
+          - File change detection since last session
+          - Time-based activity timeline (10:00 - Auth, 11:30 - Debug)
+          Reference: GTM (Git Time Metric), WakaTime
+          Impact: Eliminates 10-15min context restoration time
+      - id: TIME-002
+        title: Git-Time Integration
+        status: Pending
+        priority: P1
+        spec: |
+          Integrate GTM-style time tracking with local Git notes storage.
+          - Per-project time tracking (automatic)
+          - Weekly summary: "5h on atomic-notes, 3h on link-vault"
+          - Store in Git notes (local-first, pushable)
+          - No external service required
+      - id: TIME-003
+        title: Smart Resume
+        status: Pending
+        priority: P0
+        spec: |
+          Intelligent project resumption with AI-generated context.
+          - Show last activity: "Fixed login bug (2 hours ago)"
+          - AI summary: "You were implementing user authentication"
+          - Next actions suggestion: "Continue with: Password reset flow"
+          - Integration with existing Micro-log system
+  - name: 'Phase 12: Project Constellation'
+    tasks:
+      - id: CONST-001
+        title: Relationship Graph
+        status: Pending
+        priority: P2
+        spec: |
+          Visual graph of project interconnections (D3.js or React Flow).
+          - Relationship types:
+            * API Dependency: "atomic-notes → link-vault API"
+            * Tech Stack Similarity: "Both use Next.js 16"
+            * Knowledge Transfer: "Similar auth pattern"
+          - Interactive graph with zoom/pan
+          - Click node → open project
+      - id: CONST-002
+        title: Cross-Project Search
+        status: Pending
+        priority: P1
+        spec: |
+          Unified search across all projects.
+          - "Where did I implement JWT auth?" → search all codebases
+          - "Show all React 18 projects" → filter by tech
+          - "Find similar error handling" → pattern matching
+          - Integration with ripgrep for performance
+      - id: CONST-003
+        title: Shared Knowledge Base
+        status: Pending
+        priority: P2
+        spec: |
+          Automatic pattern detection and reuse suggestions.
+          - Detect common code snippets across projects
+          - "You solved this in project X, reuse?"
+          - Lessons learned extraction (Git commits + AI)
+          - Cross-project snippet library
+      - id: CONST-004
+        title: Cluster Analytics
+        status: Pending
+        priority: P3
+        spec: |
+          Meta-analysis of project portfolio.
+          - "Most reused patterns": 3 projects use same auth
+          - "Technology clusters": Next.js ecosystem (4 projects)
+          - "Abandoned clusters": Python projects (60 days idle)
+          - Portfolio health dashboard
+  - name: 'Phase 11: AI Co-Pilot'
+    tasks:
+      - id: AI-001
+        title: In-App AI Chat
+        status: Pending
+        priority: P2
+        spec: |
+          Direct Claude API integration within Fulcrum.
+          - Chat interface in ProjectDetailModal
+          - Auto-inject project context (WBS, recent commits, files)
+          - "Ask Claude about this project" button
+          - API key configuration in Settings
+          Reference: Cursor IDE, GitHub Copilot
+      - id: AI-002
+        title: AI-Powered WBS Generator
+        status: Pending
+        priority: P2
+        spec: |
+          Convert Virtual Projects to complete WBS automatically.
+          - "Build URL shortener with Next.js" → Full Phase/Task structure
+          - Learn from existing project WBS patterns
+          - Suggest realistic timelines based on project size
+          - One-click accept/edit generated WBS
+      - id: AI-003
+        title: Automatic Code Review
+        status: Pending
+        priority: P3
+        spec: |
+          AI-powered commit and PR analysis.
+          - Watch git commits → auto review
+          - "Potential bug in auth.ts:45" notifications
+          - PR description auto-generation
+          - Integration with existing process monitoring
+      - id: AI-004
+        title: Context-Aware Suggestions
+        status: Pending
+        priority: P3
+        spec: |
+          Proactive AI assistance based on patterns.
+          - "Haven't touched in 2 weeks, need summary?"
+          - "Similar to LINK-VAULT-005, reuse code?"
+          - "Common pattern detected: extract to library?"
+          - Learning from cross-project patterns
+  - name: 'Phase 13: Quick Wins'
+    tasks:
+      - id: QW-001
+        title: Session Snapshot
+        status: Pending
+        priority: P2
+        spec: |
+          Save and restore full dev session.
+          - Browser tabs (localhost:3000, API docs, etc.)
+          - VSCode workspace auto-backup
+          - Terminal session state
+          - "Restore full session" one-click button
+      - id: QW-002
+        title: Git Activity Heatmap
+        status: Pending
+        priority: P3
+        spec: |
+          GitHub-style contribution visualization.
+          - Per-project activity heatmap
+          - "Most active hours: 10pm-2am" insights
+          - Commit frequency trends
+          - Integration with existing freshness indicator
+      - id: QW-003
+        title: Health Score
+        status: Pending
+        priority: P2
+        spec: |
+          Comprehensive project health metric.
+          - Score calculation: Test coverage + Freshness + Activity
+          - "Project health: 85/100" badge
+          - Improvement suggestions: "Add tests (+10), Update deps (+5)"
+          - Historical trend tracking
+      - id: QW-004
+        title: Quick Actions
+        status: Pending
+        priority: P3
+        spec: |
+          Convenient shortcuts for common tasks.
+          - "Open in GitHub" button (parse git remote)
+          - "Copy install command" (npm install, pip install -r)
+          - "Open API docs" (README.md auto-parse)
+          - "Deploy" button (if deploy script detected)
   - name: 'Phase 6: The Factory (Scaffolding)'
     tasks:
       - id: SCAF-002

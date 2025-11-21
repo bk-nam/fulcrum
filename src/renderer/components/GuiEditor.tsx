@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   DndContext,
   closestCenter,
@@ -17,6 +17,7 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import PhaseSection from './PhaseSection';
+import { Target, X } from 'lucide-react';
 
 interface Task {
   id: string;
@@ -42,9 +43,13 @@ interface WbsData {
 interface GuiEditorProps {
   parsedWbs: WbsData;
   onUpdate: (updatedWbs: WbsData) => void;
+  projectPath: string;
 }
 
-const GuiEditor: React.FC<GuiEditorProps> = ({ parsedWbs, onUpdate }) => {
+const GuiEditor: React.FC<GuiEditorProps> = ({ parsedWbs, onUpdate, projectPath }) => {
+  const [currentFocusPhase, setCurrentFocusPhase] = useState<Phase | null>(null);
+  const [focusPhaseName, setFocusPhaseName] = useState<string | null>(null);
+
   // Setup sensors for drag and drop
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -52,6 +57,53 @@ const GuiEditor: React.FC<GuiEditorProps> = ({ parsedWbs, onUpdate }) => {
       coordinateGetter: sortableKeyboardCoordinates,
     })
   );
+
+  // Load current focus phase on mount
+  useEffect(() => {
+    loadCurrentFocus();
+  }, [parsedWbs.phases, projectPath]);
+
+  const loadCurrentFocus = async () => {
+    try {
+      const phaseName = await window.electron.getCurrentFocusPhase(projectPath);
+      if (phaseName && parsedWbs.phases) {
+        const phase = parsedWbs.phases.find(p => p.name === phaseName);
+        setCurrentFocusPhase(phase || null);
+        setFocusPhaseName(phaseName);
+      }
+    } catch (error) {
+      console.error('Error loading current focus:', error);
+    }
+  };
+
+  const handlePin = async (phaseName: string) => {
+    const phase = parsedWbs.phases?.find(p => p.name === phaseName);
+    if (phase) {
+      // Toggle: if already pinned, unpin
+      if (focusPhaseName === phaseName) {
+        clearFocus();
+      } else {
+        // Pin new phase (replaces existing)
+        setCurrentFocusPhase(phase);
+        setFocusPhaseName(phaseName);
+        try {
+          await window.electron.setCurrentFocusPhase(projectPath, phaseName);
+        } catch (error) {
+          console.error('Error setting current focus:', error);
+        }
+      }
+    }
+  };
+
+  const clearFocus = async () => {
+    setCurrentFocusPhase(null);
+    setFocusPhaseName(null);
+    try {
+      await window.electron.setCurrentFocusPhase(projectPath, null);
+    } catch (error) {
+      console.error('Error clearing focus:', error);
+    }
+  };
 
   // Calculate overall progress
   const calculateProgress = () => {
@@ -94,7 +146,10 @@ const GuiEditor: React.FC<GuiEditorProps> = ({ parsedWbs, onUpdate }) => {
   const handlePhaseDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
 
-    if (!over || active.id === over.id) return;
+    if (!over) return;
+
+    // Original reordering logic
+    if (active.id === over.id) return;
 
     const phases = parsedWbs.phases || [];
     const oldIndex = phases.findIndex(p => p.name === active.id);
@@ -104,45 +159,93 @@ const GuiEditor: React.FC<GuiEditorProps> = ({ parsedWbs, onUpdate }) => {
     onUpdate({ ...parsedWbs, phases: reorderedPhases });
   };
 
+  // Handle focus phase update
+  const handleFocusPhaseUpdate = (updatedPhase: Phase) => {
+    // Update in parsedWbs
+    const idx = parsedWbs.phases?.findIndex(p => p.name === focusPhaseName);
+    if (idx !== undefined && idx >= 0) {
+      handlePhaseUpdate(idx, updatedPhase);
+      // Also update local focus state
+      setCurrentFocusPhase(updatedPhase);
+    }
+  };
+
+  // Handle focus phase delete
+  const handleFocusPhaseDelete = () => {
+    const idx = parsedWbs.phases?.findIndex(p => p.name === focusPhaseName);
+    if (idx !== undefined && idx >= 0) {
+      handlePhaseDelete(idx);
+      clearFocus();
+    }
+  };
+
   return (
-    <div className="flex flex-col h-full">
-      {/* Overall Progress Bar */}
-      <div className="mb-6 p-5 bg-slate-50 rounded-xl border border-slate-200 shadow-sm">
-        <div className="flex items-center justify-between mb-3">
-          <h3 className="text-sm font-semibold text-slate-700">Overall Progress</h3>
-          <span className="text-sm font-medium text-slate-600">
-            {progress.completed} / {progress.total} tasks completed
+    <DndContext
+      sensors={sensors}
+      collisionDetection={closestCenter}
+      onDragEnd={handlePhaseDragEnd}
+    >
+      <div className="flex flex-col h-full">
+        {/* Overall Progress - Compact */}
+        <div className="flex items-center gap-3 mb-4 p-3 bg-slate-50 rounded-lg border border-slate-200">
+          <span className="text-sm font-medium text-slate-700 whitespace-nowrap">
+            Progress:
+          </span>
+          <div className="flex-1 h-2 bg-slate-200 rounded-full overflow-hidden">
+            <div
+              className="h-full bg-indigo-600 transition-all duration-500"
+              style={{ width: `${progress.percentage}%` }}
+            />
+          </div>
+          <span className="text-sm font-semibold text-indigo-600 whitespace-nowrap">
+            {progress.percentage}%
+          </span>
+          <span className="text-xs text-slate-500 whitespace-nowrap">
+            ({progress.completed}/{progress.total})
           </span>
         </div>
-        <div className="relative">
-          <div className="w-full h-4 bg-slate-200 rounded-full overflow-hidden">
-            <div
-              className="h-full bg-indigo-600 transition-all duration-700 flex items-center justify-end pr-3"
-              style={{
-                width: `${progress.percentage}%`,
-              }}
-            >
-              {progress.percentage > 15 && (
-                <span className="text-xs font-semibold text-white">{progress.percentage}%</span>
-              )}
-            </div>
+
+        {/* Current Focus Slot */}
+        <div className="mb-4">
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-sm font-semibold text-slate-700 flex items-center gap-2">
+              <Target className="w-4 h-4 text-indigo-600" />
+              Current Focus
+            </h3>
+            {currentFocusPhase && (
+              <button
+                onClick={clearFocus}
+                className="text-xs text-slate-500 hover:text-red-600 flex items-center gap-1 transition-colors"
+              >
+                <X className="w-3 h-3" />
+                Clear
+              </button>
+            )}
           </div>
-          {progress.percentage <= 15 && progress.percentage > 0 && (
-            <span className="absolute left-3 top-0 text-xs font-semibold text-slate-700">
-              {progress.percentage}%
-            </span>
+
+          {currentFocusPhase ? (
+            <div className="bg-indigo-50 border-2 border-indigo-200 rounded-lg p-3">
+              <PhaseSection
+                phase={currentFocusPhase}
+                onUpdate={handleFocusPhaseUpdate}
+                onDelete={handleFocusPhaseDelete}
+                isPinned={true}
+                onPin={() => clearFocus()}
+              />
+            </div>
+          ) : (
+            <div className="border-2 border-dashed border-slate-300 rounded-lg p-8 text-center bg-slate-50">
+              <Target className="w-8 h-8 mx-auto mb-2 text-slate-400" />
+              <p className="text-slate-500 text-sm font-medium">No phase pinned</p>
+              <p className="text-slate-400 text-xs mt-1">Click the pin button on any phase below to focus on it</p>
+            </div>
           )}
         </div>
-      </div>
 
-      {/* Phases List */}
-      <div className="flex-1 overflow-y-auto space-y-4 pr-2">
-        {parsedWbs.phases && parsedWbs.phases.length > 0 ? (
-          <DndContext
-            sensors={sensors}
-            collisionDetection={closestCenter}
-            onDragEnd={handlePhaseDragEnd}
-          >
+        {/* All Phases List */}
+        <div className="flex-1 overflow-y-auto space-y-4 pr-2">
+          <h3 className="text-sm font-semibold text-slate-700 mb-3">All Phases</h3>
+          {parsedWbs.phases && parsedWbs.phases.length > 0 ? (
             <SortableContext
               items={parsedWbs.phases.map((phase) => phase.name)}
               strategy={verticalListSortingStrategy}
@@ -154,24 +257,26 @@ const GuiEditor: React.FC<GuiEditorProps> = ({ parsedWbs, onUpdate }) => {
                   phase={phase}
                   onUpdate={(updatedPhase) => handlePhaseUpdate(index, updatedPhase)}
                   onDelete={() => handlePhaseDelete(index)}
+                  isPinned={focusPhaseName === phase.name}
+                  onPin={() => handlePin(phase.name)}
                 />
               ))}
             </SortableContext>
-          </DndContext>
-        ) : (
-          <div className="flex flex-col items-center justify-center h-full text-gray-500">
-            <p className="text-lg font-medium">No phases found</p>
-            <p className="text-sm mt-2">Switch to Code mode to add phases manually</p>
-          </div>
-        )}
-      </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center h-full text-gray-500">
+              <p className="text-lg font-medium">No phases found</p>
+              <p className="text-sm mt-2">Switch to Code mode to add phases manually</p>
+            </div>
+          )}
+        </div>
 
-      {/* Info Note */}
-      <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-800">
-        <strong>💡 Tip:</strong> Click on tasks to toggle status, expand for details, or switch to{' '}
-        <strong>Code mode</strong> to edit milestones, risks, and other fields.
+        {/* Info Note */}
+        <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-800">
+          <strong>💡 Tip:</strong> Click the pin button (📌) on any phase to set it as your Current Focus. Click tasks to toggle status, or switch to{' '}
+          <strong>Code mode</strong> to edit milestones and risks.
+        </div>
       </div>
-    </div>
+    </DndContext>
   );
 };
 
@@ -181,6 +286,8 @@ interface SortablePhaseSectionProps {
   phase: Phase;
   onUpdate: (updatedPhase: Phase) => void;
   onDelete: () => void;
+  isPinned?: boolean;
+  onPin?: () => void;
 }
 
 const SortablePhaseSection: React.FC<SortablePhaseSectionProps> = ({
@@ -188,6 +295,8 @@ const SortablePhaseSection: React.FC<SortablePhaseSectionProps> = ({
   phase,
   onUpdate,
   onDelete,
+  isPinned,
+  onPin,
 }) => {
   const {
     attributes,
@@ -212,6 +321,8 @@ const SortablePhaseSection: React.FC<SortablePhaseSectionProps> = ({
         onUpdate={onUpdate}
         onDelete={onDelete}
         dragHandleProps={{ ...attributes, ...listeners }}
+        isPinned={isPinned}
+        onPin={onPin}
       />
     </div>
   );
