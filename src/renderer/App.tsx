@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
-import { FolderOpen, RefreshCw, Settings, X, StickyNote, Lightbulb, Plus } from 'lucide-react';
+import { FolderOpen, RefreshCw, Settings, X, StickyNote, Lightbulb, Plus, Activity } from 'lucide-react';
 import ProjectCard from './components/ProjectCard';
 import VirtualProjectCard from './components/VirtualProjectCard';
 import VirtualProjectModal from './components/VirtualProjectModal';
 import SettingsModal from './components/SettingsModal';
 import ProjectDetailModal from './components/ProjectDetailModal';
 import NotesWidget from './components/NotesWidget';
+import { GlobalProcessModal } from './components/GlobalProcessModal';
 import type { Project, Settings as SettingsType, VirtualProject, ProjectStatus } from '../shared/types';
 import { PROJECT_STATUSES } from '../shared/constants';
 
@@ -25,6 +26,7 @@ function App() {
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [showDetailModal, setShowDetailModal] = useState<boolean>(false);
   const [showNotesWidget, setShowNotesWidget] = useState<boolean>(false);
+  const [showGlobalProcessModal, setShowGlobalProcessModal] = useState<boolean>(false);
   const [viewFilter, setViewFilter] = useState<'all' | 'real' | 'ideas'>('all');
   const [selectedVirtualProject, setSelectedVirtualProject] = useState<VirtualProject | null>(null);
   const [showVirtualProjectModal, setShowVirtualProjectModal] = useState<boolean>(false);
@@ -363,6 +365,14 @@ function App() {
                 Settings
               </button>
               <button
+                onClick={() => setShowGlobalProcessModal(true)}
+                className="inline-flex items-center gap-2 bg-white hover:bg-gray-50 text-gray-700 font-medium py-2 px-4 rounded-lg border border-gray-300 transition-colors duration-200"
+                title="Manage Processes"
+              >
+                <Activity className="w-4 h-4" />
+                Processes
+              </button>
+              <button
                 onClick={() => setShowNotesWidget(!showNotesWidget)}
                 className={`inline-flex items-center gap-2 font-medium py-2 px-4 rounded-lg border transition-colors duration-200 ${
                   showNotesWidget
@@ -554,6 +564,11 @@ function App() {
         isOpen={showSettings}
         onClose={() => setShowSettings(false)}
         onSave={handleSettingsSave}
+      />
+
+      <GlobalProcessModal
+        isOpen={showGlobalProcessModal}
+        onClose={() => setShowGlobalProcessModal(false)}
       />
 
       {/* Project Detail Modal */}

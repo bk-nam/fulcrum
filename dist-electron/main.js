@@ -1,8 +1,8 @@
 import electron, { app as app$1, BrowserWindow, ipcMain as ipcMain$1, dialog } from "electron";
 import path$1 from "path";
-import { fileURLToPath } from "url";
-import { promises } from "fs";
-import { exec, spawn } from "child_process";
+import { fileURLToPath as fileURLToPath$1 } from "url";
+import require$$1$1, { promises } from "fs";
+import require$$0$1, { exec, spawn } from "child_process";
 import { promisify as promisify$1 } from "util";
 import process$1 from "node:process";
 import path from "node:path";
@@ -13,6 +13,9 @@ import assert from "node:assert";
 import os from "node:os";
 import "node:events";
 import "node:stream";
+import { fileURLToPath } from "node:url";
+import childProcess from "node:child_process";
+import require$$0$2 from "os";
 const isObject$1 = (value) => {
   const type2 = typeof value;
   return value !== null && (type2 === "object" || type2 === "function");
@@ -285,7 +288,7 @@ const macos = (name) => {
     temp: path.join(tmpdir, name)
   };
 };
-const windows = (name) => {
+const windows$1 = (name) => {
   const appData = env.APPDATA || path.join(homedir, "AppData", "Roaming");
   const localAppData = env.LOCALAPPDATA || path.join(homedir, "AppData", "Local");
   return {
@@ -319,7 +322,7 @@ function envPaths(name, { suffix = "nodejs" } = {}) {
     return macos(name);
   }
   if (process$1.platform === "win32") {
-    return windows(name);
+    return windows$1(name);
   }
   return linux(name);
 }
@@ -3740,11 +3743,11 @@ const require$$9$1 = {
 };
 var uri$1 = {};
 var fastUri = { exports: {} };
-var utils;
-var hasRequiredUtils;
-function requireUtils() {
-  if (hasRequiredUtils) return utils;
-  hasRequiredUtils = 1;
+var utils$1;
+var hasRequiredUtils$1;
+function requireUtils$1() {
+  if (hasRequiredUtils$1) return utils$1;
+  hasRequiredUtils$1 = 1;
   const isUUID = RegExp.prototype.test.bind(/^[\da-f]{8}-[\da-f]{4}-[\da-f]{4}-[\da-f]{4}-[\da-f]{12}$/iu);
   const isIPv4 = RegExp.prototype.test.bind(/^(?:(?:25[0-5]|2[0-4]\d|1\d{2}|[1-9]\d|\d)\.){3}(?:25[0-5]|2[0-4]\d|1\d{2}|[1-9]\d|\d)$/u);
   function stringArrayToHexStripped(input) {
@@ -3985,7 +3988,7 @@ function requireUtils() {
     }
     return uriTokens.length ? uriTokens.join("") : void 0;
   }
-  utils = {
+  utils$1 = {
     nonSimpleDomain,
     recomposeAuthority,
     normalizeComponentEncoding,
@@ -3995,14 +3998,14 @@ function requireUtils() {
     normalizeIPv6,
     stringArrayToHexStripped
   };
-  return utils;
+  return utils$1;
 }
 var schemes;
 var hasRequiredSchemes;
 function requireSchemes() {
   if (hasRequiredSchemes) return schemes;
   hasRequiredSchemes = 1;
-  const { isUUID } = requireUtils();
+  const { isUUID } = requireUtils$1();
   const URN_REG = /([\da-z][\d\-a-z]{0,31}):((?:[\w!$'()*+,\-.:;=@]|%[\da-f]{2})+)/iu;
   const supportedSchemeNames = (
     /** @type {const} */
@@ -4211,7 +4214,7 @@ var hasRequiredFastUri;
 function requireFastUri() {
   if (hasRequiredFastUri) return fastUri.exports;
   hasRequiredFastUri = 1;
-  const { normalizeIPv6, removeDotSegments, recomposeAuthority, normalizeComponentEncoding, isIPv4, nonSimpleDomain } = requireUtils();
+  const { normalizeIPv6, removeDotSegments, recomposeAuthority, normalizeComponentEncoding, isIPv4, nonSimpleDomain } = requireUtils$1();
   const { SCHEMES, getSchemeHandler } = requireSchemes();
   function normalize(uri2, options) {
     if (typeof uri2 === "string") {
@@ -5004,13 +5007,13 @@ function requireCore$3() {
     }, warn() {
     }, error() {
     } };
-    function getLogger(logger) {
-      if (logger === false)
+    function getLogger(logger2) {
+      if (logger2 === false)
         return noLogs;
-      if (logger === void 0)
+      if (logger2 === void 0)
         return console;
-      if (logger.log && logger.warn && logger.error)
-        return logger;
+      if (logger2.log && logger2.warn && logger2.error)
+        return logger2;
       throw new Error("logger must implement log, warn and error methods");
     }
     const KEYWORD_NAME = /^[a-z_$][a-z0-9_$:-]*$/i;
@@ -7094,19 +7097,19 @@ function requireDraft2020() {
   return draft2020;
 }
 var discriminator$1 = {};
-var types$1 = {};
-var hasRequiredTypes$1;
-function requireTypes$1() {
-  if (hasRequiredTypes$1) return types$1;
-  hasRequiredTypes$1 = 1;
-  Object.defineProperty(types$1, "__esModule", { value: true });
-  types$1.DiscrError = void 0;
+var types$2 = {};
+var hasRequiredTypes$2;
+function requireTypes$2() {
+  if (hasRequiredTypes$2) return types$2;
+  hasRequiredTypes$2 = 1;
+  Object.defineProperty(types$2, "__esModule", { value: true });
+  types$2.DiscrError = void 0;
   var DiscrError;
   (function(DiscrError2) {
     DiscrError2["Tag"] = "tag";
     DiscrError2["Mapping"] = "mapping";
-  })(DiscrError || (types$1.DiscrError = DiscrError = {}));
-  return types$1;
+  })(DiscrError || (types$2.DiscrError = DiscrError = {}));
+  return types$2;
 }
 var hasRequiredDiscriminator$1;
 function requireDiscriminator$1() {
@@ -7114,7 +7117,7 @@ function requireDiscriminator$1() {
   hasRequiredDiscriminator$1 = 1;
   Object.defineProperty(discriminator$1, "__esModule", { value: true });
   const codegen_1 = requireCodegen$1();
-  const types_1 = requireTypes$1();
+  const types_1 = requireTypes$2();
   const compile_1 = requireCompile$1();
   const ref_error_1 = requireRef_error$1();
   const util_1 = requireUtil$1();
@@ -7463,7 +7466,7 @@ function require_2020() {
   return _2020.exports;
 }
 var _2020Exports = require_2020();
-var dist = { exports: {} };
+var dist$1 = { exports: {} };
 var formats = {};
 var hasRequiredFormats;
 function requireFormats() {
@@ -11253,13 +11256,13 @@ function requireCore$1() {
     }, warn() {
     }, error() {
     } };
-    function getLogger(logger) {
-      if (logger === false)
+    function getLogger(logger2) {
+      if (logger2 === false)
         return noLogs;
-      if (logger === void 0)
+      if (logger2 === void 0)
         return console;
-      if (logger.log && logger.warn && logger.error)
-        return logger;
+      if (logger2.log && logger2.warn && logger2.error)
+        return logger2;
       throw new Error("logger must implement log, warn and error methods");
     }
     const KEYWORD_NAME = /^[a-z_$][a-z0-9_$:-]*$/i;
@@ -13018,19 +13021,19 @@ function requireDraft7() {
   return draft7;
 }
 var discriminator = {};
-var types = {};
-var hasRequiredTypes;
-function requireTypes() {
-  if (hasRequiredTypes) return types;
-  hasRequiredTypes = 1;
-  Object.defineProperty(types, "__esModule", { value: true });
-  types.DiscrError = void 0;
+var types$1 = {};
+var hasRequiredTypes$1;
+function requireTypes$1() {
+  if (hasRequiredTypes$1) return types$1;
+  hasRequiredTypes$1 = 1;
+  Object.defineProperty(types$1, "__esModule", { value: true });
+  types$1.DiscrError = void 0;
   var DiscrError;
   (function(DiscrError2) {
     DiscrError2["Tag"] = "tag";
     DiscrError2["Mapping"] = "mapping";
-  })(DiscrError || (types.DiscrError = DiscrError = {}));
-  return types;
+  })(DiscrError || (types$1.DiscrError = DiscrError = {}));
+  return types$1;
 }
 var hasRequiredDiscriminator;
 function requireDiscriminator() {
@@ -13038,7 +13041,7 @@ function requireDiscriminator() {
   hasRequiredDiscriminator = 1;
   Object.defineProperty(discriminator, "__esModule", { value: true });
   const codegen_1 = requireCodegen();
-  const types_1 = requireTypes();
+  const types_1 = requireTypes$1();
   const compile_1 = requireCompile();
   const ref_error_1 = requireRef_error();
   const util_1 = requireUtil();
@@ -13295,10 +13298,10 @@ function requireLimit() {
   })(limit);
   return limit;
 }
-var hasRequiredDist;
-function requireDist() {
-  if (hasRequiredDist) return dist.exports;
-  hasRequiredDist = 1;
+var hasRequiredDist$1;
+function requireDist$1() {
+  if (hasRequiredDist$1) return dist$1.exports;
+  hasRequiredDist$1 = 1;
   (function(module, exports$1) {
     Object.defineProperty(exports$1, "__esModule", { value: true });
     const formats_1 = requireFormats();
@@ -13335,11 +13338,11 @@ function requireDist() {
     module.exports = exports$1 = formatsPlugin;
     Object.defineProperty(exports$1, "__esModule", { value: true });
     exports$1.default = formatsPlugin;
-  })(dist, dist.exports);
-  return dist.exports;
+  })(dist$1, dist$1.exports);
+  return dist$1.exports;
 }
-var distExports = requireDist();
-const ajvFormatsModule = /* @__PURE__ */ getDefaultExportFromCjs(distExports);
+var distExports$1 = requireDist$1();
+const ajvFormatsModule = /* @__PURE__ */ getDefaultExportFromCjs(distExports$1);
 const copyProperty = (to, from, property, ignoreNonConfigurable) => {
   if (property === "length" || property === "prototype") {
     return;
@@ -18666,12 +18669,1625 @@ risks:
     description: "Potential API rate limits"
     mitigation: "Implement caching strategy"
 `;
+const __dirname$2 = path.dirname(fileURLToPath(import.meta.url));
+const DEFAULT_MAX_BUFFER = 64e6;
+const MAXIMUM_PATH_COMBINATION_ATTEMPTS = 6;
+const execFile = promisify(childProcess.execFile);
+const PROCESS_FIELDS = {
+  CPU_PERCENT: "%cpu",
+  MEMORY_PERCENT: "%mem",
+  PROCESS_ID: "pid",
+  PARENT_PROCESS_ID: "ppid",
+  USER_ID: "uid",
+  START_TIME: "lstart",
+  COMMAND_NAME: "comm",
+  ARGUMENTS: "args"
+};
+const buildProcessCommandFlags = (includeAllUsersProcesses) => (includeAllUsersProcesses === false ? "" : "a") + "wwxo";
+const makeStartTime = (startTimeString) => {
+  if (!startTimeString) {
+    return void 0;
+  }
+  const parsedDate = new Date(startTimeString);
+  return Number.isNaN(parsedDate.getTime()) ? void 0 : parsedDate;
+};
+const extractExecutablePath = (commandLine) => {
+  if (!commandLine) {
+    return "";
+  }
+  if (!commandLine.startsWith("/") && !commandLine.startsWith('"')) {
+    return "";
+  }
+  if (commandLine.startsWith('"')) {
+    const quotedPathMatch = commandLine.match(/^"([^"]+)"/);
+    if (quotedPathMatch && fs.existsSync(quotedPathMatch[1])) {
+      return quotedPathMatch[1];
+    }
+    return "";
+  }
+  const commandParts = commandLine.split(" ");
+  const firstCommandToken = commandParts[0];
+  if (fs.existsSync(firstCommandToken)) {
+    return firstCommandToken;
+  }
+  const maximumCombinationAttempts = Math.min(commandParts.length, MAXIMUM_PATH_COMBINATION_ATTEMPTS);
+  for (let tokenCount = 2; tokenCount <= maximumCombinationAttempts; tokenCount++) {
+    const candidateExecutablePath = commandParts.slice(0, tokenCount).join(" ");
+    if (fs.existsSync(candidateExecutablePath)) {
+      return candidateExecutablePath;
+    }
+  }
+  return "";
+};
+const resolveExecutablePath = (operatingSystemPlatform, processId, commandLine) => {
+  if (operatingSystemPlatform === "linux" && processId) {
+    try {
+      const symbolicLink = fs.readlinkSync(`/proc/${processId}/exe`);
+      return symbolicLink.replace(/\s+\(deleted\)$/, "");
+    } catch {
+    }
+  }
+  return extractExecutablePath(commandLine);
+};
+const parseNumericField = (fieldValue, parserFunction = Number.parseInt, defaultValue = 0) => {
+  if (!fieldValue) {
+    return defaultValue;
+  }
+  const parsedValue = parserFunction(fieldValue, 10);
+  return Number.isNaN(parsedValue) ? defaultValue : parsedValue;
+};
+const parseIntegerOrUndefined = (fieldValue) => {
+  if (fieldValue === void 0 || fieldValue === "") {
+    return void 0;
+  }
+  const parsedValue = Number.parseInt(fieldValue, 10);
+  return Number.isNaN(parsedValue) ? void 0 : parsedValue;
+};
+const parseProcessFields = ({ processId, parentProcessId, userId, cpuUsage, memoryUsage, commandName, startTimeString, command }) => {
+  const parsedProcessId = parseNumericField(processId);
+  const parsedParentProcessId = parseNumericField(parentProcessId);
+  const parsedUserId = parseIntegerOrUndefined(userId);
+  const parsedCpuUsagePercentage = parseNumericField(cpuUsage, Number.parseFloat);
+  const parsedMemoryUsagePercentage = parseNumericField(memoryUsage, Number.parseFloat);
+  const resolvedExecutablePath = resolveExecutablePath(process$1.platform, parsedProcessId, command);
+  const derivedProcessName = resolvedExecutablePath ? path.basename(resolvedExecutablePath) : commandName || "";
+  return {
+    pid: parsedProcessId,
+    ppid: parsedParentProcessId,
+    uid: parsedUserId,
+    // Undefined when uid can't be parsed (avoid conflating with root)
+    cpu: parsedCpuUsagePercentage,
+    memory: parsedMemoryUsagePercentage,
+    name: derivedProcessName,
+    path: resolvedExecutablePath,
+    startTime: makeStartTime(startTimeString),
+    cmd: command || ""
+  };
+};
+const windows = async () => {
+  let binary2;
+  switch (process$1.arch) {
+    case "x64": {
+      binary2 = "fastlist-0.3.0-x64.exe";
+      break;
+    }
+    case "ia32": {
+      binary2 = "fastlist-0.3.0-x86.exe";
+      break;
+    }
+    case "arm64": {
+      throw new Error("Windows ARM64 is not supported yet.");
+    }
+    default: {
+      throw new Error(`Unsupported architecture: ${process$1.arch}`);
+    }
+  }
+  const binaryPath = path.join(__dirname$2, "vendor", binary2);
+  const { stdout } = await execFile(binaryPath, {
+    maxBuffer: DEFAULT_MAX_BUFFER,
+    windowsHide: true,
+    encoding: "utf8"
+  });
+  return stdout.trim().split(/\r?\n/).map((line) => line.split("	")).map(([processId, parentProcessId, processName]) => ({
+    pid: Number.parseInt(processId, 10),
+    ppid: Number.parseInt(parentProcessId, 10),
+    name: processName
+  }));
+};
+const nonWindowsFallbackMultipleCalls = async (options = {}) => {
+  const processDataByProcessId = {};
+  const processCommandFlags = buildProcessCommandFlags(options.all);
+  const fields = [
+    PROCESS_FIELDS.COMMAND_NAME,
+    PROCESS_FIELDS.ARGUMENTS,
+    PROCESS_FIELDS.PARENT_PROCESS_ID,
+    PROCESS_FIELDS.USER_ID,
+    PROCESS_FIELDS.CPU_PERCENT,
+    PROCESS_FIELDS.MEMORY_PERCENT,
+    PROCESS_FIELDS.START_TIME
+  ];
+  await Promise.all(fields.map(async (fieldName) => {
+    const { stdout } = await execFile("ps", [processCommandFlags, `${PROCESS_FIELDS.PROCESS_ID}=,${fieldName}=`], {
+      maxBuffer: DEFAULT_MAX_BUFFER,
+      encoding: "utf8",
+      env: {
+        ...process$1.env,
+        LC_ALL: "C",
+        LANG: "C"
+      }
+    });
+    for (const line of stdout.trim().split("\n")) {
+      const trimmedLine = line.trim();
+      const spaceIndex = trimmedLine.indexOf(" ");
+      if (spaceIndex === -1) {
+        const processId2 = trimmedLine;
+        const fieldValue2 = "";
+        processDataByProcessId[processId2] ??= {};
+        processDataByProcessId[processId2][fieldName] = fieldValue2;
+        continue;
+      }
+      const processId = trimmedLine.slice(0, spaceIndex);
+      const fieldValue = trimmedLine.slice(spaceIndex + 1).trim();
+      processDataByProcessId[processId] ??= {};
+      processDataByProcessId[processId][fieldName] = fieldValue;
+    }
+  }));
+  return Object.entries(processDataByProcessId).filter(([, data]) => data[PROCESS_FIELDS.COMMAND_NAME] && data[PROCESS_FIELDS.PARENT_PROCESS_ID] !== void 0).map(([processId, data]) => parseProcessFields({
+    processId,
+    parentProcessId: data[PROCESS_FIELDS.PARENT_PROCESS_ID],
+    userId: data[PROCESS_FIELDS.USER_ID],
+    cpuUsage: data[PROCESS_FIELDS.CPU_PERCENT],
+    memoryUsage: data[PROCESS_FIELDS.MEMORY_PERCENT],
+    commandName: data[PROCESS_FIELDS.COMMAND_NAME],
+    startTimeString: data[PROCESS_FIELDS.START_TIME],
+    command: data[PROCESS_FIELDS.ARGUMENTS] ?? ""
+  }));
+};
+const nonWindowsCall = async (options = {}) => {
+  const processCommandFlags = buildProcessCommandFlags(options.all);
+  const executeFileOptions = {
+    maxBuffer: DEFAULT_MAX_BUFFER,
+    encoding: "utf8",
+    env: {
+      ...process$1.env,
+      LC_ALL: "C",
+      LANG: "C"
+    }
+  };
+  const processFieldCommaSeparatedList = [
+    PROCESS_FIELDS.PROCESS_ID,
+    PROCESS_FIELDS.PARENT_PROCESS_ID,
+    PROCESS_FIELDS.USER_ID,
+    PROCESS_FIELDS.CPU_PERCENT,
+    PROCESS_FIELDS.MEMORY_PERCENT,
+    PROCESS_FIELDS.START_TIME,
+    PROCESS_FIELDS.COMMAND_NAME
+  ].map((fieldName) => `${fieldName}=`).join(",");
+  const commandFieldCommaSeparatedList = [
+    PROCESS_FIELDS.PROCESS_ID,
+    PROCESS_FIELDS.ARGUMENTS
+  ].map((fieldName) => `${fieldName}=`).join(",");
+  const processListingPromises = [
+    execFile("ps", [processCommandFlags, processFieldCommaSeparatedList], executeFileOptions),
+    execFile("ps", [processCommandFlags, commandFieldCommaSeparatedList], executeFileOptions)
+  ];
+  const [processOutput, commandOutput] = await Promise.all(processListingPromises);
+  const processLines = processOutput.stdout.trim().split("\n");
+  const commandLines = commandOutput.stdout.trim().split("\n");
+  const commandLinesByProcessId = {};
+  for (const line of commandLines) {
+    const trimmedLine = line.trim();
+    const spaceIndex = trimmedLine.indexOf(" ");
+    if (spaceIndex === -1) {
+      const processId2 = trimmedLine;
+      commandLinesByProcessId[processId2] = "";
+      continue;
+    }
+    const processId = trimmedLine.slice(0, spaceIndex);
+    const command = trimmedLine.slice(spaceIndex + 1).trim();
+    commandLinesByProcessId[processId] = command;
+  }
+  const processes = [];
+  for (const line of processLines) {
+    const trimmedLine = line.trim();
+    if (!trimmedLine) {
+      continue;
+    }
+    const processLineRegexMatch = trimmedLine.match(/^(\d+)\s+(\d+)\s+(\d+)\s+([\d.]+)\s+([\d.]+)\s+(.+)/);
+    if (!processLineRegexMatch) {
+      continue;
+    }
+    const [, processId, parentProcessId, userId, cpuUsage, memoryUsage, dateAndCommandPortion] = processLineRegexMatch;
+    const startTimeRegexMatch = dateAndCommandPortion.match(/^((?:\w{3}\s+){2}\d{1,2}\s+(?:\d{2}:){2}\d{2}\s+\d{4})\s+(.*)$/);
+    let startTimeString = "";
+    let processCommandName = dateAndCommandPortion;
+    if (startTimeRegexMatch) {
+      startTimeString = startTimeRegexMatch[1];
+      processCommandName = startTimeRegexMatch[2] || "";
+    }
+    processes.push(parseProcessFields({
+      processId,
+      parentProcessId,
+      userId,
+      cpuUsage,
+      memoryUsage,
+      commandName: processCommandName,
+      startTimeString,
+      command: commandLinesByProcessId[processId] ?? ""
+    }));
+  }
+  return processes;
+};
+const nonWindows = async (options = {}) => {
+  try {
+    return await nonWindowsCall(options);
+  } catch {
+    return nonWindowsFallbackMultipleCalls(options);
+  }
+};
+const psList = process$1.platform === "win32" ? windows : nonWindows;
+var dist = {};
+var find = {};
+var find_pid = {};
+var utils = {};
+var hasRequiredUtils;
+function requireUtils() {
+  if (hasRequiredUtils) return utils;
+  hasRequiredUtils = 1;
+  Object.defineProperty(utils, "__esModule", { value: true });
+  const child_process_1 = require$$0$1;
+  const UNIT_MB = 1024 * 1024;
+  const utils$12 = {
+    /**
+     * exec command with maxBuffer size
+     */
+    exec(cmd, callback) {
+      const options = {
+        maxBuffer: 2 * UNIT_MB,
+        windowsHide: true
+      };
+      (0, child_process_1.exec)(cmd, options, callback);
+    },
+    /**
+     * spawn command
+     */
+    spawn(cmd, args, options) {
+      return (0, child_process_1.spawn)(cmd, args, options);
+    },
+    /**
+     * Strip top lines of text
+     *
+     * @param  {String} text
+     * @param  {Number} num
+     * @return {String}
+     */
+    stripLine(text, num) {
+      let idx = 0;
+      while (num-- > 0) {
+        const nIdx = text.indexOf("\n", idx);
+        if (nIdx >= 0) {
+          idx = nIdx + 1;
+        }
+      }
+      return idx > 0 ? text.substring(idx) : text;
+    },
+    /**
+     * Split string and stop at max parts
+     *
+     * @param  {Number} line
+     * @param  {Number} max
+     * @return {Array}
+     */
+    split(line, max) {
+      const cols = line.trim().split(/\s+/);
+      if (cols.length > max) {
+        cols[max - 1] = cols.slice(max - 1).join(" ");
+      }
+      return cols;
+    },
+    /**
+     * Extract columns from table text
+     *
+     * Example:
+     *
+     * ```
+     * extractColumns(text, [0, 2], 3)
+     * ```
+     *
+     * From:
+     * ```
+     * foo       bar        bar2
+     * valx      valy       valz
+     * ```
+     *
+     * To:
+     * ```
+     * [ ['foo', 'bar2'], ['valx', 'valz'] ]
+     * ```
+     *
+     * @param  {String} text  raw table text
+     * @param  {Array} idxes  the column index list to extract
+     * @param  {Number} max   max column number of table
+     * @return {Array}
+     */
+    extractColumns(text, idxes, max) {
+      const lines = text.split(/(\r\n|\n|\r)/);
+      const columns = [];
+      if (!max) {
+        max = Math.max.apply(null, idxes) + 1;
+      }
+      lines.forEach((line) => {
+        const cols = utils$12.split(line, max);
+        const column = [];
+        idxes.forEach((idx) => {
+          column.push(cols[idx] || "");
+        });
+        columns.push(column);
+      });
+      return columns;
+    },
+    /**
+     * parse table text to array
+     *
+     * From:
+     * ```
+     * Header1 : foo
+     * Header2 : bar
+     * Header3 : val
+     *
+     * Header1 : foo2
+     * Header2 : bar2
+     * Header3 : val2
+     * ```
+     *
+     * To:
+     * ```
+     * [{ Header1: 'foo', Header2: 'bar', Header3: 'val' }, ...]
+     * ```
+     *
+     * @param  {String} data raw table data
+     * @return {Array}
+     */
+    parseTable(data) {
+      const lines = data.split(/(\r\n\r\n|\r\n\n|\n\r\n|\n\n)/).filter((line) => {
+        return line && line.trim().length > 0;
+      }).map((e) => e.split(/(\r\n|\n|\r)/).filter((line) => line.trim().length > 0));
+      lines.forEach((line) => {
+        for (let index = 0; line[index]; ) {
+          const entry = line[index];
+          if (entry.startsWith(" ")) {
+            line[index - 1] += entry.trimLeft();
+            line.splice(index, 1);
+          } else {
+            index += 1;
+          }
+        }
+      });
+      return lines.map((line) => {
+        const row = {};
+        line.forEach((string) => {
+          const splitterIndex = string.indexOf(":");
+          const key = string.slice(0, splitterIndex).trim();
+          row[key] = string.slice(splitterIndex + 1).trim();
+        });
+        return row;
+      });
+    }
+  };
+  utils.default = utils$12;
+  return utils;
+}
+var logger = {};
+var loglevel$1 = { exports: {} };
+var loglevel = loglevel$1.exports;
+var hasRequiredLoglevel;
+function requireLoglevel() {
+  if (hasRequiredLoglevel) return loglevel$1.exports;
+  hasRequiredLoglevel = 1;
+  (function(module) {
+    (function(root, definition) {
+      if (module.exports) {
+        module.exports = definition();
+      } else {
+        root.log = definition();
+      }
+    })(loglevel, function() {
+      var noop = function() {
+      };
+      var undefinedType = "undefined";
+      var isIE = typeof window !== undefinedType && typeof window.navigator !== undefinedType && /Trident\/|MSIE /.test(window.navigator.userAgent);
+      var logMethods = [
+        "trace",
+        "debug",
+        "info",
+        "warn",
+        "error"
+      ];
+      var _loggersByName = {};
+      var defaultLogger = null;
+      function bindMethod(obj, methodName) {
+        var method = obj[methodName];
+        if (typeof method.bind === "function") {
+          return method.bind(obj);
+        } else {
+          try {
+            return Function.prototype.bind.call(method, obj);
+          } catch (e) {
+            return function() {
+              return Function.prototype.apply.apply(method, [obj, arguments]);
+            };
+          }
+        }
+      }
+      function traceForIE() {
+        if (console.log) {
+          if (console.log.apply) {
+            console.log.apply(console, arguments);
+          } else {
+            Function.prototype.apply.apply(console.log, [console, arguments]);
+          }
+        }
+        if (console.trace) console.trace();
+      }
+      function realMethod(methodName) {
+        if (methodName === "debug") {
+          methodName = "log";
+        }
+        if (typeof console === undefinedType) {
+          return false;
+        } else if (methodName === "trace" && isIE) {
+          return traceForIE;
+        } else if (console[methodName] !== void 0) {
+          return bindMethod(console, methodName);
+        } else if (console.log !== void 0) {
+          return bindMethod(console, "log");
+        } else {
+          return noop;
+        }
+      }
+      function replaceLoggingMethods() {
+        var level = this.getLevel();
+        for (var i = 0; i < logMethods.length; i++) {
+          var methodName = logMethods[i];
+          this[methodName] = i < level ? noop : this.methodFactory(methodName, level, this.name);
+        }
+        this.log = this.debug;
+        if (typeof console === undefinedType && level < this.levels.SILENT) {
+          return "No console available for logging";
+        }
+      }
+      function enableLoggingWhenConsoleArrives(methodName) {
+        return function() {
+          if (typeof console !== undefinedType) {
+            replaceLoggingMethods.call(this);
+            this[methodName].apply(this, arguments);
+          }
+        };
+      }
+      function defaultMethodFactory(methodName, _level, _loggerName) {
+        return realMethod(methodName) || enableLoggingWhenConsoleArrives.apply(this, arguments);
+      }
+      function Logger(name, factory) {
+        var self = this;
+        var inheritedLevel;
+        var defaultLevel;
+        var userLevel;
+        var storageKey = "loglevel";
+        if (typeof name === "string") {
+          storageKey += ":" + name;
+        } else if (typeof name === "symbol") {
+          storageKey = void 0;
+        }
+        function persistLevelIfPossible(levelNum) {
+          var levelName = (logMethods[levelNum] || "silent").toUpperCase();
+          if (typeof window === undefinedType || !storageKey) return;
+          try {
+            window.localStorage[storageKey] = levelName;
+            return;
+          } catch (ignore) {
+          }
+          try {
+            window.document.cookie = encodeURIComponent(storageKey) + "=" + levelName + ";";
+          } catch (ignore) {
+          }
+        }
+        function getPersistedLevel() {
+          var storedLevel;
+          if (typeof window === undefinedType || !storageKey) return;
+          try {
+            storedLevel = window.localStorage[storageKey];
+          } catch (ignore) {
+          }
+          if (typeof storedLevel === undefinedType) {
+            try {
+              var cookie = window.document.cookie;
+              var cookieName = encodeURIComponent(storageKey);
+              var location = cookie.indexOf(cookieName + "=");
+              if (location !== -1) {
+                storedLevel = /^([^;]+)/.exec(
+                  cookie.slice(location + cookieName.length + 1)
+                )[1];
+              }
+            } catch (ignore) {
+            }
+          }
+          if (self.levels[storedLevel] === void 0) {
+            storedLevel = void 0;
+          }
+          return storedLevel;
+        }
+        function clearPersistedLevel() {
+          if (typeof window === undefinedType || !storageKey) return;
+          try {
+            window.localStorage.removeItem(storageKey);
+          } catch (ignore) {
+          }
+          try {
+            window.document.cookie = encodeURIComponent(storageKey) + "=; expires=Thu, 01 Jan 1970 00:00:00 UTC";
+          } catch (ignore) {
+          }
+        }
+        function normalizeLevel(input) {
+          var level = input;
+          if (typeof level === "string" && self.levels[level.toUpperCase()] !== void 0) {
+            level = self.levels[level.toUpperCase()];
+          }
+          if (typeof level === "number" && level >= 0 && level <= self.levels.SILENT) {
+            return level;
+          } else {
+            throw new TypeError("log.setLevel() called with invalid level: " + input);
+          }
+        }
+        self.name = name;
+        self.levels = {
+          "TRACE": 0,
+          "DEBUG": 1,
+          "INFO": 2,
+          "WARN": 3,
+          "ERROR": 4,
+          "SILENT": 5
+        };
+        self.methodFactory = factory || defaultMethodFactory;
+        self.getLevel = function() {
+          if (userLevel != null) {
+            return userLevel;
+          } else if (defaultLevel != null) {
+            return defaultLevel;
+          } else {
+            return inheritedLevel;
+          }
+        };
+        self.setLevel = function(level, persist) {
+          userLevel = normalizeLevel(level);
+          if (persist !== false) {
+            persistLevelIfPossible(userLevel);
+          }
+          return replaceLoggingMethods.call(self);
+        };
+        self.setDefaultLevel = function(level) {
+          defaultLevel = normalizeLevel(level);
+          if (!getPersistedLevel()) {
+            self.setLevel(level, false);
+          }
+        };
+        self.resetLevel = function() {
+          userLevel = null;
+          clearPersistedLevel();
+          replaceLoggingMethods.call(self);
+        };
+        self.enableAll = function(persist) {
+          self.setLevel(self.levels.TRACE, persist);
+        };
+        self.disableAll = function(persist) {
+          self.setLevel(self.levels.SILENT, persist);
+        };
+        self.rebuild = function() {
+          if (defaultLogger !== self) {
+            inheritedLevel = normalizeLevel(defaultLogger.getLevel());
+          }
+          replaceLoggingMethods.call(self);
+          if (defaultLogger === self) {
+            for (var childName in _loggersByName) {
+              _loggersByName[childName].rebuild();
+            }
+          }
+        };
+        inheritedLevel = normalizeLevel(
+          defaultLogger ? defaultLogger.getLevel() : "WARN"
+        );
+        var initialLevel = getPersistedLevel();
+        if (initialLevel != null) {
+          userLevel = normalizeLevel(initialLevel);
+        }
+        replaceLoggingMethods.call(self);
+      }
+      defaultLogger = new Logger();
+      defaultLogger.getLogger = function getLogger(name) {
+        if (typeof name !== "symbol" && typeof name !== "string" || name === "") {
+          throw new TypeError("You must supply a name when creating a logger.");
+        }
+        var logger2 = _loggersByName[name];
+        if (!logger2) {
+          logger2 = _loggersByName[name] = new Logger(
+            name,
+            defaultLogger.methodFactory
+          );
+        }
+        return logger2;
+      };
+      var _log = typeof window !== undefinedType ? window.log : void 0;
+      defaultLogger.noConflict = function() {
+        if (typeof window !== undefinedType && window.log === defaultLogger) {
+          window.log = _log;
+        }
+        return defaultLogger;
+      };
+      defaultLogger.getLoggers = function getLoggers() {
+        return _loggersByName;
+      };
+      defaultLogger["default"] = defaultLogger;
+      return defaultLogger;
+    });
+  })(loglevel$1);
+  return loglevel$1.exports;
+}
+var hasRequiredLogger;
+function requireLogger() {
+  if (hasRequiredLogger) return logger;
+  hasRequiredLogger = 1;
+  var __importDefault = logger && logger.__importDefault || function(mod) {
+    return mod && mod.__esModule ? mod : { "default": mod };
+  };
+  Object.defineProperty(logger, "__esModule", { value: true });
+  const loglevel_1 = __importDefault(requireLoglevel());
+  logger.default = loglevel_1.default;
+  return logger;
+}
+var hasRequiredFind_pid;
+function requireFind_pid() {
+  if (hasRequiredFind_pid) return find_pid;
+  hasRequiredFind_pid = 1;
+  var __createBinding = find_pid && find_pid.__createBinding || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === void 0) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() {
+        return m[k];
+      } };
+    }
+    Object.defineProperty(o, k2, desc);
+  }) : (function(o, m, k, k2) {
+    if (k2 === void 0) k2 = k;
+    o[k2] = m[k];
+  }));
+  var __setModuleDefault = find_pid && find_pid.__setModuleDefault || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+  }) : function(o, v) {
+    o["default"] = v;
+  });
+  var __importStar = find_pid && find_pid.__importStar || /* @__PURE__ */ (function() {
+    var ownKeys = function(o) {
+      ownKeys = Object.getOwnPropertyNames || function(o2) {
+        var ar = [];
+        for (var k in o2) if (Object.prototype.hasOwnProperty.call(o2, k)) ar[ar.length] = k;
+        return ar;
+      };
+      return ownKeys(o);
+    };
+    return function(mod) {
+      if (mod && mod.__esModule) return mod;
+      var result = {};
+      if (mod != null) {
+        for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+      }
+      __setModuleDefault(result, mod);
+      return result;
+    };
+  })();
+  var __importDefault = find_pid && find_pid.__importDefault || function(mod) {
+    return mod && mod.__esModule ? mod : { "default": mod };
+  };
+  Object.defineProperty(find_pid, "__esModule", { value: true });
+  const os2 = __importStar(require$$0$2);
+  const fs2 = __importStar(require$$1$1);
+  const utils_1 = __importDefault(requireUtils());
+  const logger_1 = __importDefault(requireLogger());
+  const ensureDir = (path2) => new Promise((resolve2, reject) => {
+    if (fs2.existsSync(path2)) {
+      resolve2();
+    } else {
+      fs2.mkdir(path2, (err) => {
+        err ? reject(err) : resolve2();
+      });
+    }
+  });
+  const finders = {
+    darwin(port) {
+      return new Promise((resolve2, reject) => {
+        utils_1.default.exec("netstat -anv -p TCP && netstat -anv -p UDP", function(err, stdout, stderr) {
+          if (err) {
+            reject(err);
+          } else {
+            const stderrStr = stderr.toString().trim();
+            if (stderrStr) {
+              reject(new Error(stderrStr));
+              return;
+            }
+            const table = utils_1.default.stripLine(stdout.toString(), 1);
+            const headers = table.slice(0, table.indexOf("\n"));
+            const body = utils_1.default.stripLine(table, 1);
+            const pidColumn = headers.indexOf("rxbytes") >= 0 ? 10 : 8;
+            const found = utils_1.default.extractColumns(body, [0, 3, pidColumn], 10).filter((row) => {
+              return !!String(row[0]).match(/^(udp|tcp)/);
+            }).find((row) => {
+              const matches = String(row[1]).match(/\.(\d+)$/);
+              if (matches && matches[1] === String(port)) {
+                return true;
+              }
+              return false;
+            });
+            if (found && found[2].length) {
+              resolve2(parseInt(found[2], 10));
+            } else {
+              reject(new Error(`pid of port (${port}) not found`));
+            }
+          }
+        });
+      });
+    },
+    linux(port) {
+      return new Promise((resolve2, reject) => {
+        const cmd = "netstat -tunlp";
+        utils_1.default.exec(cmd, function(err, stdout, stderr) {
+          if (err) {
+            reject(err);
+          } else {
+            const warn = stderr.toString().trim();
+            if (warn) {
+              logger_1.default.warn(warn);
+            }
+            const data = utils_1.default.stripLine(stdout.toString(), 2);
+            const columns = utils_1.default.extractColumns(data, [3, 6], 7).find((column) => {
+              const matches = String(column[0]).match(/:(\d+)$/);
+              if (matches && matches[1] === String(port)) {
+                return true;
+              }
+              return false;
+            });
+            if (columns && columns[1]) {
+              const pid = columns[1].split("/", 1)[0];
+              if (pid.length) {
+                resolve2(parseInt(pid, 10));
+              } else {
+                reject(new Error(`pid of port (${port}) not found`));
+              }
+            } else {
+              reject(new Error(`pid of port (${port}) not found`));
+            }
+          }
+        });
+      });
+    },
+    win32(port) {
+      return new Promise((resolve2, reject) => {
+        utils_1.default.exec("netstat -ano", function(err, stdout, stderr) {
+          if (err) {
+            reject(err);
+          } else {
+            const stderrStr = stderr.toString().trim();
+            if (stderrStr) {
+              reject(new Error(stderrStr));
+              return;
+            }
+            const data = utils_1.default.stripLine(stdout.toString(), 4);
+            const columns = utils_1.default.extractColumns(data, [1, 4], 5).find((column) => {
+              const matches = String(column[0]).match(/:(\d+)$/);
+              if (matches && matches[1] === String(port)) {
+                return true;
+              }
+              return false;
+            });
+            if (columns && columns[1].length && parseInt(columns[1], 10) > 0) {
+              resolve2(parseInt(columns[1], 10));
+            } else {
+              reject(new Error(`pid of port (${port}) not found`));
+            }
+          }
+        });
+      });
+    },
+    android(port) {
+      return new Promise((resolve2, reject) => {
+        const dir = os2.tmpdir() + "/.find-process";
+        const file = dir + "/" + process.pid;
+        const cmd = 'netstat -tunp >> "' + file + '"';
+        ensureDir(dir).then(() => {
+          utils_1.default.exec(cmd, () => {
+            fs2.readFile(file, "utf8", (err, data) => {
+              fs2.unlink(file, () => {
+              });
+              if (err) {
+                reject(err);
+              } else {
+                data = utils_1.default.stripLine(data, 2);
+                const columns = utils_1.default.extractColumns(data, [3, 6], 7).find((column) => {
+                  const matches = String(column[0]).match(/:(\d+)$/);
+                  if (matches && matches[1] === String(port)) {
+                    return true;
+                  }
+                  return false;
+                });
+                if (columns && columns[1]) {
+                  const pid = columns[1].split("/", 1)[0];
+                  if (pid.length) {
+                    resolve2(parseInt(pid, 10));
+                  } else {
+                    reject(new Error(`pid of port (${port}) not found`));
+                  }
+                } else {
+                  reject(new Error(`pid of port (${port}) not found`));
+                }
+              }
+            });
+          });
+        });
+      });
+    }
+  };
+  finders.freebsd = finders.darwin;
+  finders.sunos = finders.darwin;
+  function findPidByPort(port) {
+    const platform = process.platform;
+    return new Promise((resolve2, reject) => {
+      if (!(platform in finders)) {
+        return reject(new Error(`platform ${platform} is unsupported`));
+      }
+      const finder = finders[platform];
+      finder(port).then(resolve2, reject);
+    });
+  }
+  find_pid.default = findPidByPort;
+  return find_pid;
+}
+var find_process = {};
+var hasRequiredFind_process;
+function requireFind_process() {
+  if (hasRequiredFind_process) return find_process;
+  hasRequiredFind_process = 1;
+  var __createBinding = find_process && find_process.__createBinding || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === void 0) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() {
+        return m[k];
+      } };
+    }
+    Object.defineProperty(o, k2, desc);
+  }) : (function(o, m, k, k2) {
+    if (k2 === void 0) k2 = k;
+    o[k2] = m[k];
+  }));
+  var __setModuleDefault = find_process && find_process.__setModuleDefault || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+  }) : function(o, v) {
+    o["default"] = v;
+  });
+  var __importStar = find_process && find_process.__importStar || /* @__PURE__ */ (function() {
+    var ownKeys = function(o) {
+      ownKeys = Object.getOwnPropertyNames || function(o2) {
+        var ar = [];
+        for (var k in o2) if (Object.prototype.hasOwnProperty.call(o2, k)) ar[ar.length] = k;
+        return ar;
+      };
+      return ownKeys(o);
+    };
+    return function(mod) {
+      if (mod && mod.__esModule) return mod;
+      var result = {};
+      if (mod != null) {
+        for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+      }
+      __setModuleDefault(result, mod);
+      return result;
+    };
+  })();
+  var __importDefault = find_process && find_process.__importDefault || function(mod) {
+    return mod && mod.__esModule ? mod : { "default": mod };
+  };
+  Object.defineProperty(find_process, "__esModule", { value: true });
+  const path2 = __importStar(path$1);
+  const utils_1 = __importDefault(requireUtils());
+  function matchName(text, name) {
+    if (!name) {
+      return true;
+    }
+    if (text && text.match) {
+      return text.match(name) !== null;
+    }
+    return false;
+  }
+  function fetchBin(cmd) {
+    const pieces = cmd.split(path2.sep);
+    const last = pieces[pieces.length - 1];
+    if (last) {
+      pieces[pieces.length - 1] = last.split(" ")[0];
+    }
+    const fixed = [];
+    for (const part of pieces) {
+      const optIdx = part.indexOf(" -");
+      if (optIdx >= 0) {
+        fixed.push(part.substring(0, optIdx).trim());
+        break;
+      } else if (part.endsWith(" ")) {
+        fixed.push(part.trim());
+        break;
+      }
+      fixed.push(part);
+    }
+    return fixed.join(path2.sep);
+  }
+  function fetchName(fullpath) {
+    if (process.platform === "darwin") {
+      const idx = fullpath.indexOf(".app/");
+      if (idx >= 0) {
+        return path2.basename(fullpath.substring(0, idx));
+      }
+    }
+    return path2.basename(fullpath);
+  }
+  const finders = {
+    darwin(cond) {
+      return new Promise((resolve2, reject) => {
+        let cmd;
+        if ("pid" in cond && cond.pid !== void 0) {
+          cmd = `ps -p ${cond.pid} -ww -o pid,ppid,uid,gid,args`;
+        } else {
+          cmd = "ps ax -ww -o pid,ppid,uid,gid,args";
+        }
+        utils_1.default.exec(cmd, function(err, stdout, stderr) {
+          if (err) {
+            if ("pid" in cond && cond.pid !== void 0) {
+              resolve2([]);
+            } else {
+              reject(err);
+            }
+          } else {
+            const stderrStr = stderr.toString().trim();
+            if (stderrStr) {
+              reject(new Error(stderrStr));
+              return;
+            }
+            const data = utils_1.default.stripLine(stdout.toString(), 1);
+            const columns = utils_1.default.extractColumns(data, [0, 1, 2, 3, 4], 5).filter((column) => {
+              if (column[0] && cond.pid !== void 0) {
+                return column[0] === String(cond.pid);
+              } else if (column[4] && cond.name) {
+                return matchName(column[4], cond.name);
+              } else {
+                return !!column[0];
+              }
+            });
+            let list = columns.map((column) => {
+              const cmd2 = String(column[4]);
+              const bin = fetchBin(cmd2);
+              return {
+                pid: parseInt(column[0], 10),
+                ppid: parseInt(column[1], 10),
+                uid: parseInt(column[2], 10),
+                gid: parseInt(column[3], 10),
+                name: fetchName(bin),
+                bin,
+                cmd: column[4]
+              };
+            });
+            if (cond.config.strict && cond.name) {
+              list = list.filter((item) => item.name === cond.name);
+            }
+            resolve2(list);
+          }
+        });
+      });
+    },
+    win32(cond) {
+      return new Promise((resolve2, reject) => {
+        const cmd = "[Console]::OutputEncoding = [System.Text.Encoding]::UTF8; Get-CimInstance -className win32_process | select Name,ProcessId,ParentProcessId,CommandLine,ExecutablePath";
+        const lines = [];
+        const proc = utils_1.default.spawn("powershell.exe", ["/c", cmd], { detached: false, windowsHide: true });
+        proc.stdout.on("data", (data) => {
+          lines.push(data.toString());
+        });
+        proc.on("error", (err) => {
+          reject(new Error("Command '" + cmd + "' failed with reason: " + err.toString()));
+        });
+        proc.on("close", (code2) => {
+          if (code2 !== 0) {
+            return reject(new Error("Command '" + cmd + "' terminated with code: " + code2));
+          }
+          const list = utils_1.default.parseTable(lines.join("")).filter((row) => {
+            if (cond.pid !== void 0) {
+              return row.ProcessId === String(cond.pid);
+            } else if (cond.name) {
+              const rowName = row.Name || "";
+              if (cond.config.strict) {
+                return rowName === cond.name || rowName.endsWith(".exe") && rowName.slice(0, -4) === cond.name;
+              } else {
+                return matchName(row.CommandLine || rowName, cond.name);
+              }
+            } else {
+              return true;
+            }
+          }).map((row) => ({
+            pid: parseInt(row.ProcessId, 10),
+            ppid: parseInt(row.ParentProcessId, 10),
+            bin: row.ExecutablePath,
+            name: row.Name || "",
+            cmd: row.CommandLine
+          }));
+          resolve2(list);
+        });
+      });
+    },
+    android(cond) {
+      return new Promise((resolve2, reject) => {
+        const cmd = "ps";
+        utils_1.default.exec(cmd, function(err, stdout, stderr) {
+          if (err) {
+            if (cond.pid !== void 0) {
+              resolve2([]);
+            } else {
+              reject(err);
+            }
+          } else {
+            const stderrStr = stderr.toString().trim();
+            if (stderrStr) {
+              reject(new Error(stderrStr));
+              return;
+            }
+            const data = utils_1.default.stripLine(stdout.toString(), 1);
+            const columns = utils_1.default.extractColumns(data, [0, 3], 4).filter((column) => {
+              if (column[0] && cond.pid !== void 0) {
+                return column[0] === String(cond.pid);
+              } else if (column[1] && cond.name) {
+                return matchName(column[1], cond.name);
+              } else {
+                return !!column[0];
+              }
+            });
+            let list = columns.map((column) => {
+              const cmd2 = String(column[1]);
+              const bin = fetchBin(cmd2);
+              return {
+                pid: parseInt(column[0], 10),
+                ppid: 0,
+                name: fetchName(bin),
+                bin,
+                cmd: column[1]
+              };
+            });
+            if (cond.config.strict && cond.name) {
+              list = list.filter((item) => item.name === cond.name);
+            }
+            resolve2(list);
+          }
+        });
+      });
+    }
+  };
+  finders.linux = finders.darwin;
+  finders.sunos = finders.darwin;
+  finders.freebsd = finders.darwin;
+  function findProcess2(cond) {
+    const platform = process.platform;
+    const finder = finders[platform];
+    if (!finder) {
+      return Promise.reject(new Error(`Platform "${platform}" is not supported`));
+    }
+    return finder(cond);
+  }
+  find_process.default = findProcess2;
+  return find_process;
+}
+var hasRequiredFind;
+function requireFind() {
+  if (hasRequiredFind) return find;
+  hasRequiredFind = 1;
+  var __importDefault = find && find.__importDefault || function(mod) {
+    return mod && mod.__esModule ? mod : { "default": mod };
+  };
+  Object.defineProperty(find, "__esModule", { value: true });
+  const find_pid_1 = __importDefault(requireFind_pid());
+  const find_process_1 = __importDefault(requireFind_process());
+  const logger_1 = __importDefault(requireLogger());
+  const findBy = {
+    port(port, config) {
+      return (0, find_pid_1.default)(port).then((pid) => {
+        return findBy.pid(pid, config);
+      }, () => {
+        return [];
+      });
+    },
+    pid(pid, config) {
+      return (0, find_process_1.default)({
+        pid,
+        config
+      });
+    },
+    name(name, config) {
+      return (0, find_process_1.default)({
+        name,
+        config,
+        skipSelf: true
+      });
+    }
+  };
+  function find$1(by, value, options) {
+    const config = Object.assign({
+      logLevel: "warn",
+      strict: typeof options === "boolean" ? options : false
+    }, typeof options === "object" ? options : {});
+    if (config.logLevel) {
+      logger_1.default.setLevel(config.logLevel);
+    }
+    return new Promise((resolve2, reject) => {
+      if (!(by in findBy)) {
+        reject(new Error(`do not support find by "${by}"`));
+      } else {
+        const isNumber = /^\d+$/.test(String(value));
+        if (by === "pid" && !isNumber) {
+          reject(new Error("pid must be a number"));
+        } else if (by === "port" && !isNumber) {
+          reject(new Error("port must be a number"));
+        } else {
+          findBy[by](value, config).then(resolve2, reject);
+        }
+      }
+    });
+  }
+  find.default = find$1;
+  return find;
+}
+var types = {};
+var hasRequiredTypes;
+function requireTypes() {
+  if (hasRequiredTypes) return types;
+  hasRequiredTypes = 1;
+  Object.defineProperty(types, "__esModule", { value: true });
+  return types;
+}
+var hasRequiredDist;
+function requireDist() {
+  if (hasRequiredDist) return dist;
+  hasRequiredDist = 1;
+  (function(exports$1) {
+    var __createBinding = dist && dist.__createBinding || (Object.create ? (function(o, m, k, k2) {
+      if (k2 === void 0) k2 = k;
+      var desc = Object.getOwnPropertyDescriptor(m, k);
+      if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+        desc = { enumerable: true, get: function() {
+          return m[k];
+        } };
+      }
+      Object.defineProperty(o, k2, desc);
+    }) : (function(o, m, k, k2) {
+      if (k2 === void 0) k2 = k;
+      o[k2] = m[k];
+    }));
+    var __exportStar = dist && dist.__exportStar || function(m, exports$12) {
+      for (var p in m) if (p !== "default" && !Object.prototype.hasOwnProperty.call(exports$12, p)) __createBinding(exports$12, m, p);
+    };
+    var __importDefault = dist && dist.__importDefault || function(mod) {
+      return mod && mod.__esModule ? mod : { "default": mod };
+    };
+    Object.defineProperty(exports$1, "__esModule", { value: true });
+    exports$1.default = void 0;
+    var find_1 = requireFind();
+    Object.defineProperty(exports$1, "default", { enumerable: true, get: function() {
+      return __importDefault(find_1).default;
+    } });
+    __exportStar(requireTypes(), exports$1);
+  })(dist);
+  return dist;
+}
+var distExports = requireDist();
+const findProcess = /* @__PURE__ */ getDefaultExportFromCjs(distExports);
+const execAsync$1 = promisify$1(exec);
+class ProcessRegistry {
+  store;
+  processes;
+  constructor() {
+    this.store = new ElectronStore({
+      name: "process-registry",
+      defaults: {
+        processes: []
+      }
+    });
+    this.processes = /* @__PURE__ */ new Map();
+    const stored = this.store.get("processes", []);
+    this.cleanupDeadProcesses(stored);
+  }
+  /**
+   * Remove processes that are no longer running
+   */
+  async cleanupDeadProcesses(stored) {
+    const alive = await Promise.all(
+      stored.map(async (p) => ({
+        process: p,
+        isAlive: await this.isProcessAlive(p.pid)
+      }))
+    );
+    alive.forEach(({ process: process2, isAlive }) => {
+      if (isAlive) {
+        this.processes.set(process2.pid, process2);
+      }
+    });
+    this.persist();
+  }
+  /**
+   * Check if a PID is still running
+   */
+  async isProcessAlive(pid) {
+    try {
+      const processes = await psList();
+      return processes.some((p) => p.pid === pid);
+    } catch (error) {
+      console.error("Error checking process:", error);
+      return false;
+    }
+  }
+  /**
+   * Register a new process
+   */
+  register(info) {
+    this.processes.set(info.pid, info);
+    this.persist();
+    console.log(`[ProcessRegistry] Registered ${info.type} process:`, info.pid);
+  }
+  /**
+   * Unregister a process (usually when it exits)
+   */
+  unregister(pid) {
+    if (this.processes.delete(pid)) {
+      this.persist();
+      console.log(`[ProcessRegistry] Unregistered process:`, pid);
+    }
+  }
+  /**
+   * Get all processes for a specific project
+   */
+  getByProject(projectPath) {
+    return Array.from(this.processes.values()).filter(
+      (p) => p.projectPath === projectPath
+    );
+  }
+  /**
+   * Get all tracked processes
+   */
+  getAll() {
+    return Array.from(this.processes.values());
+  }
+  /**
+   * Get a specific process by PID
+   */
+  get(pid) {
+    return this.processes.get(pid);
+  }
+  /**
+   * Persist current state to disk
+   */
+  persist() {
+    const processArray = Array.from(this.processes.values());
+    this.store.set("processes", processArray);
+  }
+  /**
+   * Clear all tracked processes
+   */
+  clear() {
+    this.processes.clear();
+    this.persist();
+  }
+}
+async function killDockerContainer(pseudoPid) {
+  try {
+    const { stdout: containersJson } = await execAsync$1('docker ps --format "{{json .}}" --no-trunc');
+    if (!containersJson.trim()) {
+      return false;
+    }
+    const containers = containersJson.trim().split("\n").map((line) => {
+      try {
+        return JSON.parse(line);
+      } catch {
+        return null;
+      }
+    }).filter(Boolean);
+    for (const container of containers) {
+      const containerPseudoPid = Math.abs(
+        container.ID.split("").reduce((acc, char) => {
+          return (acc << 5) - acc + char.charCodeAt(0);
+        }, 0)
+      );
+      if (containerPseudoPid === pseudoPid) {
+        await execAsync$1(`docker stop ${container.ID}`);
+        console.log(`[ProcessManager] Stopped Docker container ${container.ID}`);
+        return true;
+      }
+    }
+    return false;
+  } catch (error) {
+    console.error(`Error killing Docker container:`, error);
+    return false;
+  }
+}
+async function killProcess(pid, force = false) {
+  try {
+    const dockerKilled = await killDockerContainer(pid);
+    if (dockerKilled) {
+      return true;
+    }
+    if (force) {
+      process.kill(pid, "SIGKILL");
+      return true;
+    }
+    process.kill(pid, "SIGTERM");
+    setTimeout(async () => {
+      const registry = new ProcessRegistry();
+      const isAlive = await registry.isProcessAlive(pid);
+      if (isAlive) {
+        console.log(`[ProcessManager] Force killing PID ${pid}`);
+        process.kill(pid, "SIGKILL");
+      }
+    }, 3e3);
+    return true;
+  } catch (error) {
+    console.error(`Error killing process ${pid}:`, error);
+    return false;
+  }
+}
+async function findProcessByPort(port) {
+  try {
+    const processes = await findProcess("port", port);
+    return processes.map((p) => ({
+      pid: p.pid,
+      projectPath: p.cmd || "",
+      projectName: p.name || "unknown",
+      type: "terminal",
+      // Assume terminal for port-based detection
+      command: p.cmd || "",
+      launchTime: Date.now(),
+      port
+    }));
+  } catch (error) {
+    console.error(`Error finding process on port ${port}:`, error);
+    return [];
+  }
+}
+async function findTerminalProcess(projectPath) {
+  try {
+    const platform = process.platform;
+    if (platform === "darwin") {
+      const { stdout } = await execAsync$1(
+        `lsof -t -c bash -c zsh -c sh -a +D "${projectPath}" 2>/dev/null || true`
+      );
+      const pids = stdout.trim().split("\n").filter((p) => p).map(Number);
+      return pids[0] || null;
+    } else if (platform === "linux") {
+      const { stdout } = await execAsync$1(
+        `ps aux | grep "${projectPath}" | grep -v grep | awk '{print $2}' | head -1`
+      );
+      const pid = parseInt(stdout.trim(), 10);
+      return isNaN(pid) ? null : pid;
+    } else if (platform === "win32") {
+      const normalizedPath = projectPath.replace(/\//g, "\\");
+      const { stdout } = await execAsync$1(
+        `tasklist /FI "WINDOWTITLE eq *${normalizedPath}*" /FO CSV /NH`
+      );
+      const match = stdout.match(/^"[^"]+","(\d+)"/);
+      return match ? parseInt(match[1], 10) : null;
+    }
+    return null;
+  } catch (error) {
+    console.error("Error finding terminal process:", error);
+    return null;
+  }
+}
+async function scanDockerContainers(projectPath, projectName) {
+  try {
+    const { stdout: dockerVersion } = await execAsync$1("docker --version").catch(() => ({ stdout: "" }));
+    if (!dockerVersion) {
+      return [];
+    }
+    const { stdout: containersJson } = await execAsync$1('docker ps --format "{{json .}}" --no-trunc');
+    if (!containersJson.trim()) {
+      return [];
+    }
+    const containers = containersJson.trim().split("\n").map((line) => {
+      try {
+        return JSON.parse(line);
+      } catch {
+        return null;
+      }
+    }).filter(Boolean);
+    const dockerProcesses = [];
+    for (const container of containers) {
+      try {
+        const { stdout: inspectJson } = await execAsync$1(`docker inspect ${container.ID}`);
+        const inspectData = JSON.parse(inspectJson)[0];
+        const mounts = inspectData.Mounts || [];
+        const hasProjectMount = mounts.some(
+          (mount) => mount.Source && mount.Source.startsWith(projectPath)
+        );
+        if (hasProjectMount) {
+          const ports = inspectData.NetworkSettings?.Ports || {};
+          const portList = [];
+          Object.keys(ports).forEach((key) => {
+            const bindings = ports[key];
+            if (bindings && Array.isArray(bindings)) {
+              bindings.forEach((binding) => {
+                if (binding.HostPort) {
+                  portList.push(parseInt(binding.HostPort, 10));
+                }
+              });
+            }
+          });
+          const pseudoPid = Math.abs(
+            container.ID.split("").reduce((acc, char) => {
+              return (acc << 5) - acc + char.charCodeAt(0);
+            }, 0)
+          );
+          dockerProcesses.push({
+            pid: pseudoPid,
+            projectPath,
+            projectName,
+            type: "terminal",
+            command: `docker: ${container.Names} (${container.Image})`,
+            launchTime: Date.now(),
+            // We don't track actual start time
+            port: portList[0]
+            // Use first port if available
+          });
+        }
+      } catch (inspectError) {
+        console.error(`Error inspecting container ${container.ID}:`, inspectError);
+      }
+    }
+    return dockerProcesses;
+  } catch (error) {
+    console.error("Error scanning Docker containers:", error);
+    return [];
+  }
+}
+async function getPortMappings() {
+  const portMap = /* @__PURE__ */ new Map();
+  try {
+    if (process.platform === "win32") {
+      const { stdout } = await execAsync$1("netstat -ano | findstr LISTENING");
+      const lines = stdout.trim().split("\n");
+      for (const line of lines) {
+        const match = line.match(/TCP\s+[^\s]+:(\d+)\s+[^\s]+\s+LISTENING\s+(\d+)/);
+        if (match) {
+          const port = parseInt(match[1], 10);
+          const pid = parseInt(match[2], 10);
+          if (!portMap.has(pid)) {
+            portMap.set(pid, []);
+          }
+          portMap.get(pid).push(port);
+        }
+      }
+    } else {
+      const { stdout } = await execAsync$1("lsof -iTCP -sTCP:LISTEN -n -P");
+      const lines = stdout.trim().split("\n").slice(1);
+      for (const line of lines) {
+        const parts = line.split(/\s+/);
+        if (parts.length >= 9) {
+          const pid = parseInt(parts[1], 10);
+          const portMatch = parts[8].match(/:(\d+)$/);
+          if (portMatch && !isNaN(pid)) {
+            const port = parseInt(portMatch[1], 10);
+            if (!portMap.has(pid)) {
+              portMap.set(pid, []);
+            }
+            portMap.get(pid).push(port);
+          }
+        }
+      }
+    }
+  } catch (error) {
+    console.error("Error getting port mappings:", error);
+  }
+  return portMap;
+}
+async function getChildPorts(parentPid, portMappings) {
+  try {
+    const allProcesses = await psList();
+    const children = allProcesses.filter((p) => p.ppid === parentPid);
+    const childPorts = [];
+    for (const child of children) {
+      const ports = portMappings.get(child.pid);
+      if (ports && ports.length > 0) {
+        childPorts.push(...ports);
+      }
+      const grandchildPorts = await getChildPorts(child.pid, portMappings);
+      if (grandchildPorts.length > 0) {
+        childPorts.push(...grandchildPorts);
+      }
+    }
+    return childPorts;
+  } catch (error) {
+    console.error("Error getting child ports:", error);
+    return [];
+  }
+}
+async function scanProjectProcesses(projectPath, projectName) {
+  try {
+    const allProcesses = await psList();
+    const relatedProcesses = [];
+    const portMappings = await getPortMappings();
+    const devServerPatterns = [
+      "node",
+      "npm",
+      "yarn",
+      "pnpm",
+      "next",
+      "vite",
+      "webpack",
+      "react-scripts",
+      "vue-cli-service",
+      "ng serve"
+    ];
+    for (const proc of allProcesses) {
+      if (!proc.cmd) continue;
+      const hasProjectPath = proc.cmd.includes(projectPath);
+      const isDevServer = devServerPatterns.some(
+        (pattern2) => proc.name.toLowerCase().includes(pattern2) || proc.cmd && proc.cmd.toLowerCase().includes(pattern2)
+      );
+      if (hasProjectPath && isDevServer) {
+        let type2 = "terminal";
+        const editorPatterns = ["code", "cursor", "antigravity", "subl", "atom", "vim", "nvim", "emacs"];
+        if (editorPatterns.some((p) => proc.name.toLowerCase().includes(p))) {
+          type2 = "editor";
+        }
+        let port;
+        if (proc.cmd) {
+          const portMatch = proc.cmd.match(/:(\d{4,5})\b/);
+          if (portMatch) {
+            port = parseInt(portMatch[1], 10);
+          }
+        }
+        if (!port && portMappings.has(proc.pid)) {
+          const ports = portMappings.get(proc.pid);
+          port = ports[0];
+        }
+        if (!port) {
+          const childPorts = await getChildPorts(proc.pid, portMappings);
+          if (childPorts.length > 0) {
+            port = childPorts[0];
+          }
+        }
+        relatedProcesses.push({
+          pid: proc.pid,
+          projectPath,
+          projectName,
+          type: type2,
+          command: proc.cmd && proc.cmd.length > 100 ? proc.cmd.substring(0, 100) + "..." : proc.cmd || proc.name,
+          launchTime: Date.now(),
+          // We don't know actual start time, use current time
+          port
+        });
+      }
+    }
+    const dockerProcesses = await scanDockerContainers(projectPath, projectName);
+    return [...relatedProcesses, ...dockerProcesses];
+  } catch (error) {
+    console.error("Error scanning project processes:", error);
+    return [];
+  }
+}
 const execAsync = promisify$1(exec);
-const __dirname$1 = path$1.dirname(fileURLToPath(import.meta.url));
+const __dirname$1 = path$1.dirname(fileURLToPath$1(import.meta.url));
 let mainWindow = null;
 const store = new ElectronStore({
   name: "fulcrum-config"
 });
+const processRegistry = new ProcessRegistry();
 const DEFAULT_SETTINGS = {
   editorCommand: "antigravity",
   terminalCommand: void 0
@@ -18795,11 +20411,25 @@ async function launchProject(projectPath) {
   try {
     const settings = getSettings();
     const { editorCommand } = settings;
+    const projectName = path$1.basename(projectPath);
     try {
       const editorProcess = spawn(editorCommand, [projectPath], {
         detached: true,
         stdio: "ignore"
       });
+      if (editorProcess.pid) {
+        processRegistry.register({
+          pid: editorProcess.pid,
+          projectPath,
+          projectName,
+          type: "editor",
+          command: editorCommand,
+          launchTime: Date.now()
+        });
+        editorProcess.on("exit", () => {
+          processRegistry.unregister(editorProcess.pid);
+        });
+      }
       editorProcess.unref();
     } catch (error) {
       console.error("Error launching editor:", error);
@@ -18825,6 +20455,19 @@ async function launchProject(projectPath) {
           return { success: true };
       }
       await execAsync(terminalCommand);
+      setTimeout(async () => {
+        const terminalPid = await findTerminalProcess(projectPath);
+        if (terminalPid) {
+          processRegistry.register({
+            pid: terminalPid,
+            projectPath,
+            projectName,
+            type: "terminal",
+            command: terminalCommand,
+            launchTime: Date.now()
+          });
+        }
+      }, 1e3);
     } catch (error) {
       console.warn("Failed to launch terminal (non-critical):", error);
     }
@@ -19249,6 +20892,103 @@ ${vp.links.map((l) => `- ${l}`).join("\n")}
       };
     } catch (error) {
       console.error("Error materializing virtual project:", error);
+      throw error;
+    }
+  });
+  ipcMain$1.handle("get-project-processes", async (_event, projectPath, projectName) => {
+    try {
+      const trackedProcesses = processRegistry.getByProject(projectPath);
+      const aliveTracked = await Promise.all(
+        trackedProcesses.map(async (p) => ({
+          process: p,
+          isAlive: await processRegistry.isProcessAlive(p.pid)
+        }))
+      );
+      const aliveTrackedList = aliveTracked.filter((p) => p.isAlive).map((p) => p.process);
+      const scannedProcesses = await scanProjectProcesses(projectPath, projectName);
+      const trackedPids = new Set(aliveTrackedList.map((p) => p.pid));
+      const untrackedProcesses = scannedProcesses.filter((p) => !trackedPids.has(p.pid));
+      return [...aliveTrackedList, ...untrackedProcesses];
+    } catch (error) {
+      console.error("Error getting project processes:", error);
+      throw error;
+    }
+  });
+  ipcMain$1.handle("get-all-processes", async () => {
+    try {
+      const trackedProcesses = processRegistry.getAll();
+      const aliveTracked = await Promise.all(
+        trackedProcesses.map(async (p) => ({
+          process: p,
+          isAlive: await processRegistry.isProcessAlive(p.pid)
+        }))
+      );
+      const aliveTrackedList = aliveTracked.filter((p) => p.isAlive).map((p) => p.process);
+      aliveTracked.filter((p) => !p.isAlive).forEach((p) => processRegistry.unregister(p.process.pid));
+      const rootDirectory = store.get("rootDirectory");
+      if (rootDirectory) {
+        try {
+          const projects = await scanProjects(rootDirectory);
+          const scannedProcesses = await Promise.all(
+            projects.map((p) => scanProjectProcesses(p.path, p.name))
+          );
+          const allScanned = scannedProcesses.flat();
+          const trackedPids = new Set(aliveTrackedList.map((p) => p.pid));
+          const untrackedProcesses = allScanned.filter((p) => !trackedPids.has(p.pid));
+          return [...aliveTrackedList, ...untrackedProcesses];
+        } catch (scanError) {
+          console.warn("Error scanning projects for processes:", scanError);
+          return aliveTrackedList;
+        }
+      }
+      return aliveTrackedList;
+    } catch (error) {
+      console.error("Error getting all processes:", error);
+      throw error;
+    }
+  });
+  ipcMain$1.handle("kill-process", async (_event, pid, force = false) => {
+    try {
+      const success = await killProcess(pid, force);
+      if (success) {
+        processRegistry.unregister(pid);
+      }
+      return { success, pid };
+    } catch (error) {
+      console.error(`Error killing process ${pid}:`, error);
+      return {
+        success: false,
+        pid,
+        error: error instanceof Error ? error.message : "Failed to kill process"
+      };
+    }
+  });
+  ipcMain$1.handle("kill-project-processes", async (_event, projectPath) => {
+    try {
+      const processes = processRegistry.getByProject(projectPath);
+      const results = await Promise.allSettled(
+        processes.map(async (p) => {
+          const success = await killProcess(p.pid);
+          if (success) {
+            processRegistry.unregister(p.pid);
+          }
+          return { success, pid: p.pid };
+        })
+      );
+      return results.map(
+        (r, i) => r.status === "fulfilled" ? r.value : { success: false, pid: processes[i].pid, error: "Failed to kill" }
+      );
+    } catch (error) {
+      console.error("Error killing project processes:", error);
+      throw error;
+    }
+  });
+  ipcMain$1.handle("find-process-by-port", async (_event, port) => {
+    try {
+      const processes = await findProcessByPort(port);
+      return processes;
+    } catch (error) {
+      console.error(`Error finding process on port ${port}:`, error);
       throw error;
     }
   });

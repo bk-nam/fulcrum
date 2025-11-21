@@ -63,3 +63,27 @@ export interface VirtualProject {
   // Optional inspiration note
   inspiration?: string; // "Like X but with Y approach"
 }
+
+export type ProcessType = 'editor' | 'terminal';
+
+export interface ProcessInfo {
+  pid: number;
+  projectPath: string;
+  projectName: string;
+  type: ProcessType;
+  command: string;
+  launchTime: number;
+  port?: number; // Optional: for processes using specific ports
+}
+
+export interface ProcessQueryResult {
+  success: boolean;
+  processes?: ProcessInfo[];
+  error?: string;
+}
+
+export interface ProcessKillResult {
+  success: boolean;
+  pid: number;
+  error?: string;
+}

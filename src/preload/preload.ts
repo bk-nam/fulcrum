@@ -1,5 +1,5 @@
 import { contextBridge, ipcRenderer } from 'electron';
-import type { Project, Settings, QuickNote, EnvVariable, VirtualProject, ProjectStatus } from '../shared/types.js';
+import type { Project, Settings, QuickNote, EnvVariable, VirtualProject, ProjectStatus, ProcessInfo, ProcessKillResult } from '../shared/types.js';
 
 // Expose protected methods that allow the renderer process to use
 // the ipcRenderer without exposing the entire object
@@ -94,6 +94,27 @@ contextBridge.exposeInMainWorld('electron', {
   materializeVirtualProject: (vpId: string, targetDirectory: string, folderName: string): Promise<{ success: boolean; projectPath: string }> => {
     return ipcRenderer.invoke('materialize-virtual-project', vpId, targetDirectory, folderName);
   },
+
+  // Process Management operations (Phase 9)
+  getProjectProcesses: (projectPath: string, projectName: string): Promise<ProcessInfo[]> => {
+    return ipcRenderer.invoke('get-project-processes', projectPath, projectName);
+  },
+
+  getAllProcesses: (): Promise<ProcessInfo[]> => {
+    return ipcRenderer.invoke('get-all-processes');
+  },
+
+  killProcess: (pid: number, force?: boolean): Promise<ProcessKillResult> => {
+    return ipcRenderer.invoke('kill-process', pid, force);
+  },
+
+  killProjectProcesses: (projectPath: string): Promise<ProcessKillResult[]> => {
+    return ipcRenderer.invoke('kill-project-processes', projectPath);
+  },
+
+  findProcessByPort: (port: number): Promise<ProcessInfo[]> => {
+    return ipcRenderer.invoke('find-process-by-port', port);
+  },
 });
 
 // Type definitions for TypeScript
@@ -118,6 +139,11 @@ export interface ElectronAPI {
   saveVirtualProject: (vp: Omit<VirtualProject, 'id' | 'createdAt' | 'updatedAt'> & { id?: string }) => Promise<VirtualProject>;
   deleteVirtualProject: (vpId: string) => Promise<{ success: boolean }>;
   materializeVirtualProject: (vpId: string, targetDirectory: string, folderName: string) => Promise<{ success: boolean; projectPath: string }>;
+  getProjectProcesses: (projectPath: string, projectName: string) => Promise<ProcessInfo[]>;
+  getAllProcesses: () => Promise<ProcessInfo[]>;
+  killProcess: (pid: number, force?: boolean) => Promise<ProcessKillResult>;
+  killProjectProcesses: (projectPath: string) => Promise<ProcessKillResult[]>;
+  findProcessByPort: (port: number) => Promise<ProcessInfo[]>;
 }
 
 declare global {

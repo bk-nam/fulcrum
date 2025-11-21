@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, Rocket, Copy, CheckCircle, Layout, Code, KeyRound, Eye, EyeOff } from 'lucide-react';
+import { X, Rocket, Copy, CheckCircle, Layout, Code, KeyRound, Eye, EyeOff, Activity } from 'lucide-react';
 import * as yaml from 'js-yaml';
 import type { Project, EnvVariable, ProjectStatus } from '../../shared/types';
 import { AI_CONTEXT_PROMPT_TEMPLATE } from '../../shared/constants';
 import GuiEditor from './GuiEditor';
 import { StatusSelector } from './StatusSelector';
+import { ProcessManager } from './ProcessManager';
 
 interface ProjectDetailModalProps {
   project: Project | null;
@@ -29,7 +30,7 @@ const ProjectDetailModal: React.FC<ProjectDetailModalProps> = ({
   const [copySuccess, setCopySuccess] = useState(false);
 
   // GUI Mode state
-  const [viewMode, setViewMode] = useState<'gui' | 'code' | 'env'>('gui');
+  const [viewMode, setViewMode] = useState<'gui' | 'code' | 'env' | 'processes'>('gui');
   const [parsedWbs, setParsedWbs] = useState<any>(null);
   const [parseError, setParseError] = useState<string | null>(null);
 
@@ -339,6 +340,18 @@ const ProjectDetailModal: React.FC<ProjectDetailModalProps> = ({
                     <KeyRound className="w-4 h-4" />
                     Env
                   </button>
+                  <button
+                    onClick={() => setViewMode('processes')}
+                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md transition-all duration-300 text-sm font-medium ${
+                      viewMode === 'processes'
+                        ? 'bg-indigo-600 text-white shadow-sm'
+                        : 'bg-white text-slate-700 hover:bg-slate-100'
+                    }`}
+                    title="Running Processes"
+                  >
+                    <Activity className="w-4 h-4" />
+                    Processes
+                  </button>
                 </div>
               </>
             )}
@@ -415,6 +428,11 @@ const ProjectDetailModal: React.FC<ProjectDetailModalProps> = ({
                       lineHeight: '1.6',
                     }}
                   />
+                ) : viewMode === 'processes' ? (
+                  /* Processes Mode */
+                  <div className="h-full overflow-y-auto p-6">
+                    <ProcessManager projectPath={project.path} projectName={project.name} />
+                  </div>
                 ) : (
                   /* Env Mode */
                   <div className="h-full overflow-y-auto p-6">

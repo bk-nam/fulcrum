@@ -134,11 +134,19 @@ phases:
     tasks:
       - id: MON-001
         title: Process Killer
-        status: Pending
+        status: Done
         priority: P3
+        period: '2025-11-21'
         spec: |
           List active PIDs related to project paths.
           "Kill All" button to force stop zombie servers.
+          ✅ Completed: Process tracking for Editor + Terminal (best-effort on Terminal)
+          ✅ ProcessRegistry with electron-store persistence
+          ✅ IPC handlers: get-project-processes, get-all-processes, kill-process, kill-project-processes, find-process-by-port
+          ✅ Dual UI: "Processes" tab in ProjectDetailModal + GlobalProcessModal
+          ✅ Real-time process monitoring with 5-second polling
+          ✅ Port-based process detection (Enhanced feature)
+          ✅ Cross-platform support (macOS/Windows/Linux)
   - name: 'Phase 6: The Factory (Scaffolding)'
     tasks:
       - id: SCAF-002

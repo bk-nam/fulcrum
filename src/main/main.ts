@@ -8,6 +8,7 @@ import Store from 'electron-store';
 import * as yaml from 'js-yaml';
 import type { Project, Settings, QuickNote, EnvVariable, VirtualProject, ProjectStatus } from '../shared/types.js';
 import { WBS_TEMPLATE } from '../shared/constants.js';
+import { ProcessRegistry, killProcess, findProcessByPort, findTerminalProcess, scanProjectProcesses } from './processManager.js';
 
 const execAsync = promisify(exec);
 
@@ -27,6 +28,9 @@ interface StoreSchema {
 const store = new Store<StoreSchema>({
   name: 'fulcrum-config',
 });
+
+// Initialize process registry
+const processRegistry = new ProcessRegistry();
 
 // Default settings
 const DEFAULT_SETTINGS: Settings = {
@@ -215,6 +219,7 @@ async function launchProject(projectPath: string): Promise<{ success: boolean; e
   try {
     const settings = getSettings();
     const { editorCommand } = settings;
+    const projectName = path.basename(projectPath);
 
     // Launch Editor
     try {
@@ -222,6 +227,24 @@ async function launchProject(projectPath: string): Promise<{ success: boolean; e
         detached: true,
         stdio: 'ignore',
       });
+
+      if (editorProcess.pid) {
+        // Register the editor process
+        processRegistry.register({
+          pid: editorProcess.pid,
+          projectPath,
+          projectName,
+          type: 'editor',
+          command: editorCommand,
+          launchTime: Date.now(),
+        });
+
+        // Listen for process exit
+        editorProcess.on('exit', () => {
+          processRegistry.unregister(editorProcess.pid!);
+        });
+      }
+
       editorProcess.unref();
     } catch (error) {
       console.error('Error launching editor:', error);
@@ -251,6 +274,21 @@ async function launchProject(projectPath: string): Promise<{ success: boolean; e
       }
 
       await execAsync(terminalCommand);
+
+      // Try to find the terminal process PID (best effort)
+      setTimeout(async () => {
+        const terminalPid = await findTerminalProcess(projectPath);
+        if (terminalPid) {
+          processRegistry.register({
+            pid: terminalPid,
+            projectPath,
+            projectName,
+            type: 'terminal',
+            command: terminalCommand,
+            launchTime: Date.now(),
+          });
+        }
+      }, 1000); // Wait 1 second for terminal to start
     } catch (error) {
       console.warn('Failed to launch terminal (non-critical):', error);
       // Terminal launch failure is non-critical, editor is primary
@@ -801,6 +839,147 @@ ${vp.links.length > 0 ? `## References\n${vp.links.map(l => `- ${l}`).join('\n')
       };
     } catch (error) {
       console.error('Error materializing virtual project:', error);
+      throw error;
+    }
+  });
+
+  // ========================================
+  // Process Management Handlers (Phase 9)
+  // ========================================
+
+  // Handler: Get all processes for a specific project
+  ipcMain.handle('get-project-processes', async (_event, projectPath: string, projectName: string) => {
+    try {
+      // Get tracked processes
+      const trackedProcesses = processRegistry.getByProject(projectPath);
+
+      // Filter out dead tracked processes
+      const aliveTracked = await Promise.all(
+        trackedProcesses.map(async (p) => ({
+          process: p,
+          isAlive: await processRegistry.isProcessAlive(p.pid),
+        }))
+      );
+      const aliveTrackedList = aliveTracked
+        .filter((p) => p.isAlive)
+        .map((p) => p.process);
+
+      // Scan for untracked processes related to this project
+      const scannedProcesses = await scanProjectProcesses(projectPath, projectName);
+
+      // Merge, avoiding duplicates by PID
+      const trackedPids = new Set(aliveTrackedList.map((p) => p.pid));
+      const untrackedProcesses = scannedProcesses.filter((p) => !trackedPids.has(p.pid));
+
+      return [...aliveTrackedList, ...untrackedProcesses];
+    } catch (error) {
+      console.error('Error getting project processes:', error);
+      throw error;
+    }
+  });
+
+  // Handler: Get all tracked processes
+  ipcMain.handle('get-all-processes', async () => {
+    try {
+      // Get tracked processes from registry
+      const trackedProcesses = processRegistry.getAll();
+
+      // Filter out dead tracked processes
+      const aliveTracked = await Promise.all(
+        trackedProcesses.map(async (p) => ({
+          process: p,
+          isAlive: await processRegistry.isProcessAlive(p.pid),
+        }))
+      );
+      const aliveTrackedList = aliveTracked
+        .filter((p) => p.isAlive)
+        .map((p) => p.process);
+
+      // Clean up dead processes from registry
+      aliveTracked
+        .filter((p) => !p.isAlive)
+        .forEach((p) => processRegistry.unregister(p.process.pid));
+
+      // Scan all projects for untracked processes
+      const rootDirectory = store.get('rootDirectory');
+      if (rootDirectory) {
+        try {
+          const projects = await scanProjects(rootDirectory);
+          const scannedProcesses = await Promise.all(
+            projects.map(p => scanProjectProcesses(p.path, p.name))
+          );
+
+          // Flatten scanned processes
+          const allScanned = scannedProcesses.flat();
+
+          // Merge, avoiding duplicates by PID
+          const trackedPids = new Set(aliveTrackedList.map((p) => p.pid));
+          const untrackedProcesses = allScanned.filter((p) => !trackedPids.has(p.pid));
+
+          return [...aliveTrackedList, ...untrackedProcesses];
+        } catch (scanError) {
+          console.warn('Error scanning projects for processes:', scanError);
+          // Fall back to tracked processes only
+          return aliveTrackedList;
+        }
+      }
+
+      return aliveTrackedList;
+    } catch (error) {
+      console.error('Error getting all processes:', error);
+      throw error;
+    }
+  });
+
+  // Handler: Kill a specific process
+  ipcMain.handle('kill-process', async (_event, pid: number, force = false) => {
+    try {
+      const success = await killProcess(pid, force);
+      if (success) {
+        processRegistry.unregister(pid);
+      }
+      return { success, pid };
+    } catch (error) {
+      console.error(`Error killing process ${pid}:`, error);
+      return {
+        success: false,
+        pid,
+        error: error instanceof Error ? error.message : 'Failed to kill process',
+      };
+    }
+  });
+
+  // Handler: Kill all processes for a project
+  ipcMain.handle('kill-project-processes', async (_event, projectPath: string) => {
+    try {
+      const processes = processRegistry.getByProject(projectPath);
+      const results = await Promise.allSettled(
+        processes.map(async (p) => {
+          const success = await killProcess(p.pid);
+          if (success) {
+            processRegistry.unregister(p.pid);
+          }
+          return { success, pid: p.pid };
+        })
+      );
+      return results.map((r, i) =>
+        r.status === 'fulfilled'
+          ? r.value
+          : { success: false, pid: processes[i].pid, error: 'Failed to kill' }
+      );
+    } catch (error) {
+      console.error('Error killing project processes:', error);
+      throw error;
+    }
+  });
+
+  // Handler: Find processes using a specific port
+  ipcMain.handle('find-process-by-port', async (_event, port: number) => {
+    try {
+      const processes = await findProcessByPort(port);
+      return processes;
+    } catch (error) {
+      console.error(`Error finding process on port ${port}:`, error);
       throw error;
     }
   });

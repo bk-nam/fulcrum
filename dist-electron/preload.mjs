@@ -71,5 +71,21 @@ electron.contextBridge.exposeInMainWorld("electron", {
   },
   materializeVirtualProject: (vpId, targetDirectory, folderName) => {
     return electron.ipcRenderer.invoke("materialize-virtual-project", vpId, targetDirectory, folderName);
+  },
+  // Process Management operations (Phase 9)
+  getProjectProcesses: (projectPath, projectName) => {
+    return electron.ipcRenderer.invoke("get-project-processes", projectPath, projectName);
+  },
+  getAllProcesses: () => {
+    return electron.ipcRenderer.invoke("get-all-processes");
+  },
+  killProcess: (pid, force) => {
+    return electron.ipcRenderer.invoke("kill-process", pid, force);
+  },
+  killProjectProcesses: (projectPath) => {
+    return electron.ipcRenderer.invoke("kill-project-processes", projectPath);
+  },
+  findProcessByPort: (port) => {
+    return electron.ipcRenderer.invoke("find-process-by-port", port);
   }
 });
