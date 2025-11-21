@@ -52,6 +52,13 @@ electron.contextBridge.exposeInMainWorld("electron", {
   readEnv: (projectPath) => {
     return electron.ipcRenderer.invoke("read-env", projectPath);
   },
+  // Project Status operations
+  updateProjectStatus: (projectPath, status) => {
+    return electron.ipcRenderer.invoke("update-project-status", projectPath, status);
+  },
+  getProjectStatuses: () => {
+    return electron.ipcRenderer.invoke("get-project-statuses");
+  },
   // Virtual Project operations
   getVirtualProjects: () => {
     return electron.ipcRenderer.invoke("get-virtual-projects");

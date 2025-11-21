@@ -1,6 +1,8 @@
 project_info:
   name: Fulcrum
-  description: Personal Developer Platform (PDP) to manage lifecycle, context, and assets of multiple side-projects.
+  description: >-
+    Personal Developer Platform (PDP) to manage lifecycle, context, and assets
+    of multiple side-projects.
   period: 2025-11-20 ~ 2026-03-31
   owner: Maker & Gemini
   tech_stack:
@@ -12,6 +14,7 @@ project_info:
     - shadcn/ui
     - electron-store
     - react-icons
+  status: active
 milestones:
   - title: 'v0.1: Foundation (Scanner & Launcher)'
     due_date: '2025-11-20'
@@ -43,33 +46,47 @@ phases:
         title: Local Scanner System
         status: Done
         priority: P0
-        spec: Recursive directory scanning. Project type detection (Node/Python/Rust).
+        spec: >-
+          Recursive directory scanning. Project type detection
+          (Node/Python/Rust).
   - name: 'Phase 2: Ignition (Launcher)'
     tasks:
       - id: LNC-001
         title: Context Restoration Launcher
         status: Done
         priority: P0
-        spec: Simultaneous launch of Editor (Antigravity) & Terminal. Settings UI for custom paths.
+        spec: >-
+          Simultaneous launch of Editor (Antigravity) & Terminal. Settings UI
+          for custom paths.
   - name: 'Phase 3: Command Center (WBS)'
     tasks:
       - id: WBS-001
         title: Structured YAML Editor
         status: Done
         priority: P0
-        spec: Project Detail Modal. Read/Write `wbs.yaml`. 'Copy Context for AI' feature. Debounced auto-save.
+        spec: >-
+          Project Detail Modal. Read/Write `wbs.yaml`. 'Copy Context for AI'
+          feature. Debounced auto-save.
       - id: WBS-002
         title: Interactive WBS GUI
         priority: P0
         status: Done
         period: '2025-11-20'
-        spec: |
+        spec: >
           Implement a Dual-Mode editor (Text/Visual).
+
           Parse YAML to UI components (Phases as Accordions, Tasks as Cards).
+
           Allow direct manipulation of Status, Priority, and Specs via UI.
+
           Auto-sync UI changes back to YAML string.
-          ✅ Completed: GUI editor with phase accordions, task cards, status toggle, priority selector.
-          ✅ Design refinement: Professional indigo/slate color scheme, removed gradients and glow effects.
+
+          ✅ Completed: GUI editor with phase accordions, task cards, status
+          toggle, priority selector.
+
+          ✅ Design refinement: Professional indigo/slate color scheme, removed
+          gradients and glow effects.
+
           ✅ Language icons: Added react-icons for Node.js, Python, Rust logos.
   - name: 'Phase 4: Intelligence (Dashboard)'
     tasks:
@@ -78,7 +95,9 @@ phases:
         status: Done
         priority: P1
         period: '2025-11-20'
-        spec: Parsed `wbs.yaml` metadata. Displayed Tech Stack badges and Phase info.
+        spec: >-
+          Parsed `wbs.yaml` metadata. Displayed Tech Stack badges and Phase
+          info.
   - name: 'Phase 5: Lifecycle Management (Zombie Killer)'
     tasks:
       - id: LIFE-001
@@ -86,7 +105,9 @@ phases:
         status: Done
         priority: P2
         period: '2025-11-20'
-        spec: Implemented logic to visualize relative time and color-code project health (Fresh/Stale/Zombie).
+        spec: >-
+          Implemented logic to visualize relative time and color-code project
+          health (Fresh/Stale/Zombie).
       - id: LIFE-002
         title: Search & Filter System
         status: Ready
@@ -97,18 +118,23 @@ phases:
           Filter by: Status (Active/Zombie), Tech Stack.
       - id: LIFE-003
         title: Last Touched Heatmap
-        status: Pending
+        status: Done
         priority: P2
         spec: |
           Calculate days since last file modification.
           Color code cards: Green (<3 days), Yellow (<2 weeks), Red (>1 month).
       - id: LIFE-004
         title: Status Tagging System
-        status: Pending
+        status: Done
         priority: P2
-        spec: |
+        period: '2025-11-21'
+        spec: >
           Manual tagging: Active, Maintenance, Archive, Idea.
+
           Filter/Sort dashboard by these tags.
+
+          ✅ Completed: Status badge/selector, electron-store + wbs.yaml sync,
+          filter UI, status-based sorting
       - id: LIFE-005
         title: Tech Stack Indexer
         status: Pending
@@ -121,7 +147,7 @@ phases:
       - id: SCAF-001
         title: One-Click Boilerplate
         status: Pending
-        priority: P1
+        priority: P3
         spec: |
           UI to select templates (Next.js, Python/FastAPI).
           Execute system commands to clone/init projects.

@@ -6,7 +6,7 @@ import { spawn, exec } from 'child_process';
 import { promisify } from 'util';
 import Store from 'electron-store';
 import * as yaml from 'js-yaml';
-import type { Project, Settings, QuickNote, EnvVariable, VirtualProject } from '../shared/types.js';
+import type { Project, Settings, QuickNote, EnvVariable, VirtualProject, ProjectStatus } from '../shared/types.js';
 import { WBS_TEMPLATE } from '../shared/constants.js';
 
 const execAsync = promisify(exec);
@@ -21,6 +21,7 @@ interface StoreSchema {
   settings?: Settings;
   quickNotes?: QuickNote[];
   virtualProjects?: VirtualProject[];
+  projectStatuses?: Record<string, ProjectStatus>;
 }
 
 const store = new Store<StoreSchema>({
@@ -141,10 +142,20 @@ async function parseWbsMetadata(projectPath: string, lastModified: number): Prom
     const thirtyDaysAgo = Date.now() - (30 * 24 * 60 * 60 * 1000);
     const isZombie = lastModified < thirtyDaysAgo;
 
+    // Extract project status from wbs.yaml (if present)
+    let projectStatus: ProjectStatus | undefined;
+    if (wbsData.project_info?.status) {
+      const statusFromYaml = wbsData.project_info.status.toLowerCase();
+      if (['active', 'maintenance', 'archive', 'idea'].includes(statusFromYaml)) {
+        projectStatus = statusFromYaml as ProjectStatus;
+      }
+    }
+
     return {
       techStack,
       currentPhase,
       isZombie,
+      projectStatus,
     };
   } catch (error) {
     console.error(`Error parsing WBS metadata for ${projectPath}:`, error);
@@ -160,6 +171,9 @@ async function scanProjects(rootPath: string): Promise<Project[]> {
     const entries = await fs.readdir(rootPath, { withFileTypes: true });
     const projects: Project[] = [];
 
+    // Load stored project statuses from electron-store
+    const storedStatuses = store.get('projectStatuses') || {};
+
     for (const entry of entries) {
       if (entry.isDirectory()) {
         const projectPath = path.join(rootPath, entry.name);
@@ -172,11 +186,15 @@ async function scanProjects(rootPath: string): Promise<Project[]> {
           // Parse wbs.yaml metadata
           const meta = await parseWbsMetadata(projectPath, stats.mtimeMs);
 
+          // Merge status: YAML > electron-store > undefined
+          const status = meta?.projectStatus || storedStatuses[projectPath];
+
           projects.push({
             name: entry.name,
             path: projectPath,
             type,
             lastModified: stats.mtimeMs,
+            status,
             meta,
           });
         }
@@ -577,6 +595,56 @@ function setupIpcHandlers(): void {
     } catch (error) {
       console.error('Error reading .env files:', error);
       return [];
+    }
+  });
+
+  // Handler: Update project status
+  ipcMain.handle('update-project-status', async (_event, projectPath: string, status: ProjectStatus | null) => {
+    try {
+      const statuses = store.get('projectStatuses') || {};
+
+      if (status === null) {
+        // Remove status
+        delete statuses[projectPath];
+      } else {
+        statuses[projectPath] = status;
+      }
+
+      store.set('projectStatuses', statuses);
+
+      // Optional: Also save to wbs.yaml if it exists
+      const wbsPath = path.join(projectPath, 'wbs.yaml');
+      try {
+        await fs.access(wbsPath);
+        const wbsContent = await fs.readFile(wbsPath, 'utf-8');
+        const wbsData = yaml.load(wbsContent) as any;
+
+        if (wbsData?.project_info) {
+          if (status === null) {
+            delete wbsData.project_info.status;
+          } else {
+            wbsData.project_info.status = status;
+          }
+          await fs.writeFile(wbsPath, yaml.dump(wbsData), 'utf-8');
+        }
+      } catch (yamlError) {
+        // wbs.yaml doesn't exist or error, ignore (electron-store only)
+      }
+
+      return { success: true };
+    } catch (error) {
+      console.error('Error updating project status:', error);
+      throw error;
+    }
+  });
+
+  // Handler: Get all project statuses
+  ipcMain.handle('get-project-statuses', async () => {
+    try {
+      return store.get('projectStatuses') || {};
+    } catch (error) {
+      console.error('Error getting project statuses:', error);
+      return {};
     }
   });
 

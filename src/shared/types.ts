@@ -2,15 +2,19 @@
  * Shared types between main and renderer processes
  */
 
+export type ProjectStatus = 'active' | 'maintenance' | 'archive' | 'idea';
+
 export interface Project {
   name: string;
   path: string;
   type: 'node' | 'python' | 'rust' | 'unknown';
   lastModified: number;
+  status?: ProjectStatus;
   meta?: {
     techStack: string[];
     currentPhase?: string;
     isZombie?: boolean;
+    projectStatus?: ProjectStatus;
   };
 }
 

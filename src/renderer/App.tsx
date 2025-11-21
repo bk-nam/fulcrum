@@ -6,7 +6,8 @@ import VirtualProjectModal from './components/VirtualProjectModal';
 import SettingsModal from './components/SettingsModal';
 import ProjectDetailModal from './components/ProjectDetailModal';
 import NotesWidget from './components/NotesWidget';
-import type { Project, Settings as SettingsType, VirtualProject } from '../shared/types';
+import type { Project, Settings as SettingsType, VirtualProject, ProjectStatus } from '../shared/types';
+import { PROJECT_STATUSES } from '../shared/constants';
 
 interface Toast {
   message: string;
@@ -20,7 +21,6 @@ function App() {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [showSettings, setShowSettings] = useState<boolean>(false);
-  const [settings, setSettings] = useState<SettingsType | null>(null);
   const [toast, setToast] = useState<Toast | null>(null);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [showDetailModal, setShowDetailModal] = useState<boolean>(false);
@@ -28,6 +28,8 @@ function App() {
   const [viewFilter, setViewFilter] = useState<'all' | 'real' | 'ideas'>('all');
   const [selectedVirtualProject, setSelectedVirtualProject] = useState<VirtualProject | null>(null);
   const [showVirtualProjectModal, setShowVirtualProjectModal] = useState<boolean>(false);
+  const [statusFilter, setStatusFilter] = useState<ProjectStatus | 'all' | 'untagged'>('all');
+  const [sortBy, setSortBy] = useState<'name' | 'status' | 'freshness'>('freshness');
 
   // Load root directory and projects on mount
   useEffect(() => {
@@ -125,8 +127,7 @@ function App() {
     }
   };
 
-  const handleSettingsSave = (newSettings: SettingsType) => {
-    setSettings(newSettings);
+  const handleSettingsSave = (_newSettings: SettingsType) => {
     showToast('Settings saved successfully', 'success');
   };
 
@@ -212,11 +213,54 @@ function App() {
     }
   };
 
-  // Filter logic
-  const filteredProjects = projects;
+  // Filter and sort logic
+  const filteredProjects = projects.filter(project => {
+    // View filter (real/ideas)
+    if (viewFilter === 'ideas') return false;
+
+    // Status filter
+    if (statusFilter === 'all') return true;
+    if (statusFilter === 'untagged') return !project.status;
+    return project.status === statusFilter;
+  });
+
+  // Sort projects
+  const sortedProjects = [...filteredProjects].sort((a, b) => {
+    switch (sortBy) {
+      case 'name':
+        return a.name.localeCompare(b.name);
+
+      case 'status': {
+        // Active > Maintenance > Idea > Archive > Untagged
+        const statusOrder: Record<string, number> = {
+          active: 1,
+          maintenance: 2,
+          idea: 3,
+          archive: 4,
+          undefined: 5,
+        };
+        return (statusOrder[a.status || 'undefined'] || 5) - (statusOrder[b.status || 'undefined'] || 5);
+      }
+
+      case 'freshness':
+      default:
+        return b.lastModified - a.lastModified;
+    }
+  });
+
   const filteredVirtualProjects = virtualProjects;
-  const displayProjects = viewFilter === 'ideas' ? [] : filteredProjects;
+  const displayProjects = sortedProjects;
   const displayVirtualProjects = viewFilter === 'real' ? [] : filteredVirtualProjects;
+
+  // Calculate statistics
+  const projectStats = {
+    total: projects.length,
+    active: projects.filter(p => p.status === 'active').length,
+    maintenance: projects.filter(p => p.status === 'maintenance').length,
+    archive: projects.filter(p => p.status === 'archive').length,
+    idea: projects.filter(p => p.status === 'idea').length,
+    untagged: projects.filter(p => !p.status).length,
+  };
 
   // Scenario A: Welcome screen (no root directory configured)
   if (!rootPath && !loading) {
@@ -369,6 +413,71 @@ function App() {
           </div>
         ) : (
           <div>
+            {/* Statistics Bar */}
+            <div className="mb-4 flex items-center gap-4 text-sm text-gray-600">
+              <span className="font-medium">Total: {projectStats.total}</span>
+              {projectStats.active > 0 && <span className="text-green-600">🟢 Active: {projectStats.active}</span>}
+              {projectStats.maintenance > 0 && <span className="text-blue-600">🔵 Maintenance: {projectStats.maintenance}</span>}
+              {projectStats.idea > 0 && <span className="text-yellow-600">💡 Idea: {projectStats.idea}</span>}
+              {projectStats.archive > 0 && <span className="text-gray-500">⚫ Archive: {projectStats.archive}</span>}
+              {projectStats.untagged > 0 && <span className="text-gray-400">Untagged: {projectStats.untagged}</span>}
+            </div>
+
+            {/* Filter and Sort Controls */}
+            <div className="mb-6 flex items-center justify-between flex-wrap gap-4">
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium text-gray-700">Status:</span>
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    onClick={() => setStatusFilter('all')}
+                    className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
+                      statusFilter === 'all'
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+                    }`}
+                  >
+                    All
+                  </button>
+                  {(Object.keys(PROJECT_STATUSES) as ProjectStatus[]).map((status) => (
+                    <button
+                      key={status}
+                      onClick={() => setStatusFilter(status)}
+                      className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
+                        statusFilter === status
+                          ? 'bg-blue-600 text-white'
+                          : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+                      }`}
+                    >
+                      {PROJECT_STATUSES[status].icon} {PROJECT_STATUSES[status].label}
+                    </button>
+                  ))}
+                  <button
+                    onClick={() => setStatusFilter('untagged')}
+                    className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
+                      statusFilter === 'untagged'
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+                    }`}
+                  >
+                    Untagged
+                  </button>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium text-gray-700">Sort:</span>
+                <select
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value as any)}
+                  className="px-3 py-1.5 text-sm border border-gray-300 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="freshness">Freshness</option>
+                  <option value="status">Status</option>
+                  <option value="name">Name (A-Z)</option>
+                </select>
+              </div>
+            </div>
+
             {/* Filter Tabs */}
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-2 p-1 rounded-lg border border-slate-300 bg-white">
@@ -453,6 +562,7 @@ function App() {
         isOpen={showDetailModal}
         onClose={handleCloseDetailModal}
         onLaunch={handleLaunch}
+        onStatusChange={loadProjects}
       />
 
       {/* Notes Widget */}

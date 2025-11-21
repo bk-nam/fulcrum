@@ -3,6 +3,7 @@ import { Rocket, Milestone, Folder } from 'lucide-react';
 import { SiNodedotjs, SiPython, SiRust } from 'react-icons/si';
 import type { Project } from '../../shared/types';
 import { getRelativeTime, getProjectHealth, getHealthColor } from '../../shared/utils';
+import { StatusBadge } from './StatusBadge';
 
 interface ProjectCardProps {
   project: Project;
@@ -110,6 +111,14 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onLaunch, onClick })
           <p className="text-sm text-gray-500 capitalize">
             {project.type}
           </p>
+
+          {/* Status Badge (Read-only) */}
+          {project.status && (
+            <div className="mt-2">
+              <StatusBadge status={project.status} />
+            </div>
+          )}
+
           {renderTechStack()}
         </div>
       </div>

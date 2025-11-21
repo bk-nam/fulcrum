@@ -1,5 +1,5 @@
 import { contextBridge, ipcRenderer } from 'electron';
-import type { Project, Settings, QuickNote, EnvVariable, VirtualProject } from '../shared/types.js';
+import type { Project, Settings, QuickNote, EnvVariable, VirtualProject, ProjectStatus } from '../shared/types.js';
 
 // Expose protected methods that allow the renderer process to use
 // the ipcRenderer without exposing the entire object
@@ -69,6 +69,15 @@ contextBridge.exposeInMainWorld('electron', {
     return ipcRenderer.invoke('read-env', projectPath);
   },
 
+  // Project Status operations
+  updateProjectStatus: (projectPath: string, status: ProjectStatus | null): Promise<{ success: boolean }> => {
+    return ipcRenderer.invoke('update-project-status', projectPath, status);
+  },
+
+  getProjectStatuses: (): Promise<Record<string, ProjectStatus>> => {
+    return ipcRenderer.invoke('get-project-statuses');
+  },
+
   // Virtual Project operations
   getVirtualProjects: (): Promise<VirtualProject[]> => {
     return ipcRenderer.invoke('get-virtual-projects');
@@ -103,6 +112,8 @@ export interface ElectronAPI {
   saveQuickNote: (note: Omit<QuickNote, 'id' | 'timestamp'>) => Promise<QuickNote>;
   deleteQuickNote: (noteId: string) => Promise<{ success: boolean }>;
   readEnv: (projectPath: string) => Promise<EnvVariable[]>;
+  updateProjectStatus: (projectPath: string, status: ProjectStatus | null) => Promise<{ success: boolean }>;
+  getProjectStatuses: () => Promise<Record<string, ProjectStatus>>;
   getVirtualProjects: () => Promise<VirtualProject[]>;
   saveVirtualProject: (vp: Omit<VirtualProject, 'id' | 'createdAt' | 'updatedAt'> & { id?: string }) => Promise<VirtualProject>;
   deleteVirtualProject: (vpId: string) => Promise<{ success: boolean }>;

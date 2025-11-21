@@ -18629,6 +18629,7 @@ const WBS_TEMPLATE = `project_info:
   name: "Project Name"
   period: "2025-11-20 ~ 2025-12-31"
   owner: "User"
+  status: active
   tech_stack: ["Electron", "React", "TypeScript"]
 
 milestones:
@@ -18742,10 +18743,18 @@ async function parseWbsMetadata(projectPath, lastModified) {
     }
     const thirtyDaysAgo = Date.now() - 30 * 24 * 60 * 60 * 1e3;
     const isZombie = lastModified < thirtyDaysAgo;
+    let projectStatus;
+    if (wbsData.project_info?.status) {
+      const statusFromYaml = wbsData.project_info.status.toLowerCase();
+      if (["active", "maintenance", "archive", "idea"].includes(statusFromYaml)) {
+        projectStatus = statusFromYaml;
+      }
+    }
     return {
       techStack,
       currentPhase,
-      isZombie
+      isZombie,
+      projectStatus
     };
   } catch (error) {
     console.error(`Error parsing WBS metadata for ${projectPath}:`, error);
@@ -18756,6 +18765,7 @@ async function scanProjects(rootPath) {
   try {
     const entries = await promises.readdir(rootPath, { withFileTypes: true });
     const projects = [];
+    const storedStatuses = store.get("projectStatuses") || {};
     for (const entry of entries) {
       if (entry.isDirectory()) {
         const projectPath = path$1.join(rootPath, entry.name);
@@ -18763,11 +18773,13 @@ async function scanProjects(rootPath) {
         if (type2 !== "unknown" || (await promises.readdir(projectPath)).includes(".git")) {
           const stats = await promises.stat(projectPath);
           const meta = await parseWbsMetadata(projectPath, stats.mtimeMs);
+          const status = meta?.projectStatus || storedStatuses[projectPath];
           projects.push({
             name: entry.name,
             path: projectPath,
             type: type2,
             lastModified: stats.mtimeMs,
+            status,
             meta
           });
         }
@@ -19065,6 +19077,44 @@ function setupIpcHandlers() {
     } catch (error) {
       console.error("Error reading .env files:", error);
       return [];
+    }
+  });
+  ipcMain$1.handle("update-project-status", async (_event, projectPath, status) => {
+    try {
+      const statuses = store.get("projectStatuses") || {};
+      if (status === null) {
+        delete statuses[projectPath];
+      } else {
+        statuses[projectPath] = status;
+      }
+      store.set("projectStatuses", statuses);
+      const wbsPath = path$1.join(projectPath, "wbs.yaml");
+      try {
+        await promises.access(wbsPath);
+        const wbsContent = await promises.readFile(wbsPath, "utf-8");
+        const wbsData = load(wbsContent);
+        if (wbsData?.project_info) {
+          if (status === null) {
+            delete wbsData.project_info.status;
+          } else {
+            wbsData.project_info.status = status;
+          }
+          await promises.writeFile(wbsPath, dump(wbsData), "utf-8");
+        }
+      } catch (yamlError) {
+      }
+      return { success: true };
+    } catch (error) {
+      console.error("Error updating project status:", error);
+      throw error;
+    }
+  });
+  ipcMain$1.handle("get-project-statuses", async () => {
+    try {
+      return store.get("projectStatuses") || {};
+    } catch (error) {
+      console.error("Error getting project statuses:", error);
+      return {};
     }
   });
   ipcMain$1.handle("get-virtual-projects", async () => {

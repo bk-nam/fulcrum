@@ -1,15 +1,17 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { X, Rocket, Copy, CheckCircle, Layout, Code, KeyRound, Eye, EyeOff } from 'lucide-react';
 import * as yaml from 'js-yaml';
-import type { Project, EnvVariable } from '../../shared/types';
+import type { Project, EnvVariable, ProjectStatus } from '../../shared/types';
 import { AI_CONTEXT_PROMPT_TEMPLATE } from '../../shared/constants';
 import GuiEditor from './GuiEditor';
+import { StatusSelector } from './StatusSelector';
 
 interface ProjectDetailModalProps {
   project: Project | null;
   isOpen: boolean;
   onClose: () => void;
   onLaunch: (project: Project) => void;
+  onStatusChange?: () => void;
 }
 
 const ProjectDetailModal: React.FC<ProjectDetailModalProps> = ({
@@ -17,6 +19,7 @@ const ProjectDetailModal: React.FC<ProjectDetailModalProps> = ({
   isOpen,
   onClose,
   onLaunch,
+  onStatusChange,
 }) => {
   const [wbsContent, setWbsContent] = useState('');
   const [wbsExists, setWbsExists] = useState(false);
@@ -34,6 +37,9 @@ const ProjectDetailModal: React.FC<ProjectDetailModalProps> = ({
   const [envVars, setEnvVars] = useState<EnvVariable[]>([]);
   const [showValues, setShowValues] = useState<Record<string, boolean>>({});
 
+  // Status management - local state for immediate UI update
+  const [currentStatus, setCurrentStatus] = useState<ProjectStatus | undefined>(project?.status);
+
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const initialContentRef = useRef<string>('');
 
@@ -41,6 +47,7 @@ const ProjectDetailModal: React.FC<ProjectDetailModalProps> = ({
   useEffect(() => {
     if (isOpen && project) {
       loadWbsContent();
+      setCurrentStatus(project.status); // Initialize status
     }
   }, [isOpen, project]);
 
@@ -141,6 +148,27 @@ const ProjectDetailModal: React.FC<ProjectDetailModalProps> = ({
     }
   };
 
+  const handleStatusChange = async (status: ProjectStatus | null) => {
+    if (!project) return;
+
+    const newStatus = status || undefined;
+
+    try {
+      // 1. Optimistic update - immediately reflect in UI
+      setCurrentStatus(newStatus);
+
+      // 2. Persist to backend
+      await window.electron.updateProjectStatus(project.path, status);
+
+      // 3. Refresh project list in parent
+      onStatusChange?.();
+    } catch (error) {
+      console.error('Failed to update status:', error);
+      // Rollback on error
+      setCurrentStatus(project.status);
+    }
+  };
+
   // Parse YAML to object for GUI mode
   const parseYaml = (content: string): boolean => {
     try {
@@ -232,6 +260,15 @@ const ProjectDetailModal: React.FC<ProjectDetailModalProps> = ({
           <div className="flex-1">
             <h1 className="text-3xl font-bold text-gray-900">{project.name}</h1>
             <p className="text-sm text-gray-500 mt-1">{project.path}</p>
+
+            {/* Status Management */}
+            <div className="mt-3">
+              <StatusSelector
+                currentStatus={currentStatus}
+                projectPath={project.path}
+                onStatusChange={handleStatusChange}
+              />
+            </div>
           </div>
 
           <div className="flex items-center gap-3">

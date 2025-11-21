@@ -2,12 +2,45 @@
  * Shared constants for Fulcrum
  */
 
-import type { VirtualProject } from './types.js';
+import type { VirtualProject, ProjectStatus } from './types.js';
+
+export const PROJECT_STATUSES: Record<ProjectStatus, {
+  label: string;
+  description: string;
+  icon: string;
+  color: 'green' | 'blue' | 'gray' | 'yellow';
+}> = {
+  active: {
+    label: 'Active',
+    description: 'Currently under active development',
+    icon: '🟢',
+    color: 'green',
+  },
+  maintenance: {
+    label: 'Maintenance',
+    description: 'Complete, occasional updates',
+    icon: '🔵',
+    color: 'blue',
+  },
+  archive: {
+    label: 'Archive',
+    description: 'No longer maintained',
+    icon: '⚫',
+    color: 'gray',
+  },
+  idea: {
+    label: 'Idea',
+    description: 'Planning/prototyping stage',
+    icon: '💡',
+    color: 'yellow',
+  },
+};
 
 export const WBS_TEMPLATE = `project_info:
   name: "Project Name"
   period: "2025-11-20 ~ 2025-12-31"
   owner: "User"
+  status: active
   tech_stack: ["Electron", "React", "TypeScript"]
 
 milestones:
