@@ -19,61 +19,36 @@
 
 ## 🚀 Key Features
 
-### 1. ⚡️ Instant Context Launcher (유니버설 런처)
-- 클릭 한 번으로 해당 프로젝트의 **IDE(Antigravity/VS Code)**와 **터미널**을 동시에 실행합니다.
-- 프로젝트별 실행 경로와 환경을 자동으로 인식합니다.
+### ⚡️ Instant Context Launcher
+- 클릭 한 번으로 프로젝트의 **IDE + 터미널** 동시 실행
+- 프로젝트별 실행 경로와 환경 자동 인식
 
-### 2. 🧠 AI Command Center (지능형 WBS)
-- 단순한 `TODO.md`가 아닌, **SI급 구조화된 WBS (`wbs.yaml`)**를 제공합니다.
-- **"Copy Context for AI"**: 버튼 하나로 프로젝트의 목표, 기술 스택, 현재 진행 단계(Phase), 남은 할 일 목록을 프롬프트 형태로 클립보드에 복사합니다.
-- AI(Claude Code 등)는 이 맥락을 완벽히 이해하고 코드를 작성합니다.
+### 🧠 AI Command Center
+- **구조화된 WBS (`wbs.yaml`)** 기반 프로젝트 관리
+- **GUI 편집기**: 드래그 앤 드롭으로 Phase/Task 관리
+- **"Copy Context for AI"**: 프로젝트 컨텍스트를 AI에게 즉시 전달
 
-### 3. 📊 Live Dashboard (상태 시각화)
-- 단순한 폴더 목록이 아닌, 살아있는 현황판을 제공합니다.
-- `wbs.yaml`을 실시간으로 파싱하여 **기술 스택(Tech Stack)**, **현재 단계(Phase)**, **우선순위(Priority)**를 배지 형태로 보여줍니다.
+### 📊 Live Dashboard
+- **Status Tagging**: Active/Maintenance/Archive/Idea 상태 관리
+- **Freshness Indicator**: 마지막 수정 시간 기반 프로젝트 건강도 시각화
+- **Tech Stack & Phase**: `wbs.yaml` 실시간 파싱 및 배지 표시
 
-### 4. 🏗️ Scaffolding & Lifecycle (Planned)
-- **One-Click Start:** 자주 쓰는 스택(Next.js, Python 등)으로 프로젝트를 1초 만에 생성합니다.
-- **Zombie Killer:** 오랫동안 손대지 않은 프로젝트를 시각화하여 정리하거나 되살립니다.
+### 💡 Virtual Projects
+- 아이디어 단계 프로젝트 저장 및 관리
+- 실제 프로젝트로 변환 (자동 초기화)
+
+### 🔧 Dev Tooling
+- **Env Viewer**: `.env` 파일 읽기 (민감 정보 마스킹)
+- **Quick Notes**: 프로젝트별 메모 작성
 
 ---
 
 ## 🛠️ Tech Stack
 
-Fulcrum은 빠르고 강력한 로컬 제어를 위해 다음 기술들로 제작되었습니다.
-
-- **Core:** Electron (v33+)
-- **Builder:** Vite
-- **Frontend:** React 18, TypeScript
-- **Styling:** Tailwind CSS, shadcn/ui
-- **State/Data:** electron-store (Persistence), js-yaml (Parser)
-
----
-
-## 📖 How to Use (The AI Workflow)
-
-Fulcrum을 사용하여 AI와 협업하는 표준 워크플로우입니다.
-
-1.  **Scan:** Fulcrum을 실행하여 로컬 프로젝트들을 스캔합니다.
-2.  **Initialize:** 관리하고 싶은 프로젝트를 클릭하고 **"Initialize Structured WBS"** 버튼을 누릅니다.
-3.  **Plan:** 생성된 `wbs.yaml`에 프로젝트의 목표와 대략적인 계획을 적습니다.
-4.  **Copy:** **"Copy Context for AI"** 버튼을 클릭합니다.
-5.  **Generate:** Claude Code나 ChatGPT에게 붙여넣고 명령합니다.
-    > *"복사한 맥락을 바탕으로 Phase 1의 상세 구현 계획을 짜줘."*
-6.  **Apply:** AI가 짜준 YAML을 다시 Fulcrum 에디터에 붙여넣고 저장합니다.
-
----
-
-## 🗺️ Roadmap
-
-현재 **v0.2 (Command Center)** 단계이며, 지속적으로 진화 중입니다.
-
-- [x] **Phase 1:** Core Engine & Scanner (완료)
-- [x] **Phase 2:** Instant Launcher & Settings (완료)
-- [x] **Phase 3:** Structured WBS Editor & AI Bridge (완료)
-- [ ] **Phase 4:** Dashboard Intelligence (진행 중)
-- [ ] **Phase 5:** Lifecycle Management (Zombie Project Filter)
-- [ ] **Phase 6:** Scaffolding Factory
+- **Electron + Vite** (Desktop App)
+- **React + TypeScript** (Frontend)
+- **Tailwind CSS + shadcn/ui** (Styling)
+- **electron-store + js-yaml** (Data)
 
 ---
 
